@@ -1,0 +1,742 @@
+﻿@model List<WebApplication2.Models.Training>
+@using WebApplication2.Models
+@using WebApplication2.Extentions
+
+@{
+    var employeeId = Context.Request.Query["employeeId"].ToString();
+    var employee = ViewBag.Employee as Employee;
+    ViewData["Title"] = employee != null ? $"{employee.FirstName} {employee.LastName}'s Trainings" : "Employee Trainings";
+    ViewData["Subtitle"] = "View and manage employee training records";
+
+    // Safe null handling
+    var trainings = Model ?? new List<Training>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <div class="btn-group">
+        <a href="@Url.Action("CreateTraining", "Training", new { employeeId = employeeId })" class="btn btn-primary me-2">
+            <i class="bi bi-plus-circle me-1"></i>Add Training
+        </a>
+        <a href="@Url.Action("Details", "Employee", new { id = employeeId })" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Employee
+        </a>
+    </div>
+</div>
+
+@if (employee != null)
+{
+    <!-- Employee Summary -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        @if (!string.IsNullOrEmpty(employee.ProfileImageUrl))
+                        {
+                            <img src="@employee.ProfileImageUrl" alt="Profile" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                <i class="bi bi-person text-white"></i>
+                            </div>
+                        }
+                        <div>
+                            <h4 class="mb-1">@employee.FirstName @employee.LastName</h4>
+                            <p class="text-muted mb-1">@employee.Position • @employee.Department</p>
+                            <div>
+                                <span class="badge bg-primary me-2">@employee.Email</span>
+                                @if (!string.IsNullOrEmpty(employee.EmployeeId))
+                                {
+                                    <span class="badge bg-secondary">ID: @employee.EmployeeId</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="h4 text-primary mb-0">@trainings.Count</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 text-success mb-0">@trainings.Count(t => t?.Status == "Completed")</div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 text-warning mb-0">@trainings.Count(t => t?.Status == "In Progress")</div>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Controls Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <!-- Search -->
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="searchTrainings" class="form-control" placeholder="Search trainings by title, provider, status...">
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <select id="progressFilter" class="form-select">
+                            <option value="">All Progress</option>
+                            <option value="0-25">0-25%</option>
+                            <option value="26-50">26-50%</option>
+                            <option value="51-75">51-75%</option>
+                            <option value="76-100">76-100%</option>
+                            <option value="100">Completed (100%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Records -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-journal-check me-2"></i>Training Records
+                <span class="badge bg-primary ms-2" id="trainingCount">@trainings.Count</span>
+            </h5>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-secondary active" id="listViewBtn" title="List View">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="cardViewBtn" title="Card View">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        @if (trainings.Any())
+        {
+            <!-- List View -->
+            <div id="listViewContainer">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Training Title</th>
+                                <th>Provider</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Assigned By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trainingTableBody">
+                            @foreach (var training in trainings)
+                            {
+                                // Safe date conversions with null checks
+                                var startDate = training?.StartDateDateTime() ?? DateTime.Now;
+                                var endDate = training?.EndDateDateTime() ?? DateTime.Now.AddDays(30);
+                                var isOverdue = training?.IsOverdue() ?? false;
+                                var isCompleted = training?.IsCompleted() ?? false;
+                                var daysLeft = (endDate - DateTime.Now).Days;
+
+                                <tr class="training-row"
+                                    data-status="@training?.Status?.ToLower().Replace(" ", "-")"
+                                    data-progress="@(training?.Progress ?? 0)"
+                                    data-search="@($"{training?.Title} {training?.Provider} {training?.Status} {training?.AssignedBy}".ToLower())"
+                                    data-training-program-id="@training?.TrainingProgramId">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-book text-white"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-1">@training?.Title</h6>
+                                                <small class="text-muted">
+                                                    @if (!string.IsNullOrEmpty(training?.Description))
+                                                    {
+                                                        @(training.Description.Length > 100 ? training.Description.Substring(0, 100) + "..." : training.Description)
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">No description</span>
+                                                    }
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@training?.Provider</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(training?.Status)">
+                                            @training?.Status
+                                            @if (isOverdue)
+                                            {
+                                                <i class="bi bi-exclamation-triangle ms-1"></i>
+                                            }
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px; width: 80px;">
+                                                <div class="progress-bar @GetProgressBarClass(training?.Progress ?? 0)"
+                                                     role="progressbar"
+                                                     style="width: @((training?.Progress ?? 0) * 100)%;"
+                                                     aria-valuenow="@((training?.Progress ?? 0) * 100)"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100"></div>
+                                            </div>
+                                            <small>@(((training?.Progress ?? 0) * 100).ToString("F0"))%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @startDate.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted @(isOverdue ? "text-danger fw-bold" : "")">
+                                            @endDate.ToString("MMM dd, yyyy")
+                                            @if (isOverdue)
+                                            {
+                                                <br>
+                                                <span class="badge bg-danger">@Math.Abs(daysLeft) days overdue</span>
+                                            }
+                                            else if (daysLeft >= 0 && !isCompleted)
+                                            {
+                                                <br>
+                                                <span class="badge @GetDaysLeftBadgeClass(daysLeft)">
+                                                    @daysLeft days left
+                                                </span>
+                                            }
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @if (training?.AssignedBy == "admin")
+                                        {
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-person-gear me-1"></i>Admin
+                                            </span>
+                                        }
+                                        else if (training?.AssignedBy == "employee")
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-person me-1"></i>Self
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark">@training?.AssignedBy</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info view-training" data-training-id="@training?.Id" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (training?.AssignedBy == "employee" && training?.Status != "Completed")
+                                            {
+                                                <button type="button" class="btn btn-outline-warning edit-training" data-training-id="@training?.Id" title="Edit Training">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            }
+                                            @if (training?.AssignedBy == "employee")
+                                            {
+                                                <button type="button" class="btn btn-outline-danger delete-training" data-training-id="@training?.Id" data-training-title="@training?.Title" title="Delete Training">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card View -->
+            <div id="cardViewContainer" class="d-none">
+                <div class="row g-4 p-4" id="trainingCardsContainer">
+                    @foreach (var training in trainings)
+                    {
+                        // Safe date conversions with null checks
+                        var startDate = training?.StartDateDateTime() ?? DateTime.Now;
+                        var endDate = training?.EndDateDateTime() ?? DateTime.Now.AddDays(30);
+                        var isOverdue = training?.IsOverdue() ?? false;
+                        var isCompleted = training?.IsCompleted() ?? false;
+                        var daysLeft = (endDate - DateTime.Now).Days;
+
+                        <div class="col-xl-4 col-lg-6 col-md-6 training-card"
+                             data-status="@training?.Status?.ToLower().Replace(" ", "-")"
+                             data-progress="@(training?.Progress ?? 0)"
+                             data-search="@($"{training?.Title} {training?.Provider} {training?.Status} {training?.AssignedBy}".ToLower())"
+                             data-training-program-id="@training?.TrainingProgramId">
+                            <div class="card training-card-item h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0 fw-bold">@training?.Title</h6>
+                                    <div>
+                                        <span class="badge @GetStatusBadgeClass(training?.Status)">@training?.Status</span>
+                                        @if (isOverdue)
+                                        {
+                                            <span class="badge bg-danger ms-1">Overdue</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Training Info -->
+                                    <div class="training-info mb-3">
+                                        <div class="mb-2">
+                                            <i class="bi bi-building me-2 text-muted"></i>
+                                            <span class="text-dark">@training?.Provider</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <i class="bi bi-calendar me-2 text-muted"></i>
+                                            <small class="text-dark">@startDate.ToString("MMM dd, yyyy") - @endDate.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(training?.Description))
+                                        {
+                                            <div class="mb-3">
+                                                <small class="text-muted">
+                                                    @(training.Description.Length > 150 ? training.Description.Substring(0, 150) + "..." : training.Description)
+                                                </small>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Progress Section -->
+                                    <div class="progress-section mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted">Progress</small>
+                                            <small class="fw-bold">@(((training?.Progress ?? 0) * 100).ToString("F0"))%</small>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar @GetProgressBarClass(training?.Progress ?? 0)"
+                                                 style="width: @((training?.Progress ?? 0) * 100)%;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Timeline Info -->
+                                    <div class="timeline-info mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Start Date</small>
+                                                <small class="fw-bold">@startDate.ToString("MMM dd")</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">End Date</small>
+                                                <small class="fw-bold @(isOverdue ? "text-danger" : "")">@endDate.ToString("MMM dd")</small>
+                                            </div>
+                                        </div>
+                                        @if (!isCompleted)
+                                        {
+                                            <div class="text-center mt-2">
+                                                <small class="badge @GetDaysLeftBadgeClass(daysLeft)">
+                                                    @(daysLeft > 0 ? $"{daysLeft} days left" : "Overdue")
+                                                </small>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Assigned By -->
+                                    <div class="assigned-by mb-3">
+                                        @if (training?.AssignedBy == "admin")
+                                        {
+                                            <small class="text-muted">
+                                                <i class="bi bi-person-gear me-1"></i>Assigned by Admin
+                                            </small>
+                                        }
+                                        else if (training?.AssignedBy == "employee")
+                                        {
+                                            <small class="text-muted">
+                                                <i class="bi bi-person me-1"></i>Self-Added
+                                            </small>
+                                        }
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="training-actions d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-outline-primary btn-sm view-training" data-training-id="@training?.Id">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </button>
+                                        @if (training?.AssignedBy == "employee" && training?.Status != "Completed")
+                                        {
+                                            <button type="button" class="btn btn-outline-warning btn-sm edit-training" data-training-id="@training?.Id">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-book text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="text-muted">No Training Records Found</h4>
+                <p class="text-muted mb-4">This employee doesn't have any training records yet.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="@Url.Action("CreateTraining", "Training", new { employeeId = employeeId })" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Add First Training
+                    </a>
+                    <a href="@Url.Action("AssignTraining", "Training")" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-1"></i>Assign Training
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- No Results Message -->
+<div id="noResults" class="d-none">
+    <div class="text-center py-5">
+        <i class="bi bi-search display-1 text-muted"></i>
+        <h4 class="text-muted mt-3">No Trainings Found</h4>
+        <p class="text-muted">Try adjusting your search or filters to find what you're looking for.</p>
+        <button id="clearFilters" class="btn btn-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Training</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the training "<strong id="trainingTitleToDelete"></strong>"?</p>
+                <p class="text-danger small mb-0">This action cannot be undone. The training record will be permanently removed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete Training</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchTrainings');
+            const statusFilter = document.getElementById('statusFilter');
+            const progressFilter = document.getElementById('progressFilter');
+            const listViewBtn = document.getElementById('listViewBtn');
+            const cardViewBtn = document.getElementById('cardViewBtn');
+            const listViewContainer = document.getElementById('listViewContainer');
+            const cardViewContainer = document.getElementById('cardViewContainer');
+            const trainingCount = document.getElementById('trainingCount');
+            const noResults = document.getElementById('noResults');
+            const clearFiltersBtn = document.getElementById('clearFilters');
+
+            // View toggle functionality
+            function toggleView(isCardView) {
+                if (!isCardView) {
+                    listViewBtn.classList.add('active');
+                    cardViewBtn.classList.remove('active');
+                    listViewContainer.classList.remove('d-none');
+                    cardViewContainer.classList.add('d-none');
+                } else {
+                    listViewBtn.classList.remove('active');
+                    cardViewBtn.classList.add('active');
+                    listViewContainer.classList.add('d-none');
+                    cardViewContainer.classList.remove('d-none');
+                }
+                filterTrainings();
+            }
+
+            listViewBtn.addEventListener('click', () => toggleView(false));
+            cardViewBtn.addEventListener('click', () => toggleView(true));
+
+            // Filter trainings based on search and filters
+            function filterTrainings() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusValue = statusFilter.value;
+                const progressValue = progressFilter.value;
+
+                let visibleCount = 0;
+                const isCardView = cardViewBtn.classList.contains('active');
+
+                // Get all training elements based on current view
+                const trainingElements = isCardView ?
+                    document.querySelectorAll('#trainingCardsContainer .training-card') :
+                    document.querySelectorAll('#trainingTableBody .training-row');
+
+                trainingElements.forEach(element => {
+                    const searchData = element.getAttribute('data-search') || '';
+                    const statusData = element.getAttribute('data-status') || '';
+                    const progressData = parseFloat(element.getAttribute('data-progress') || 0);
+
+                    // Handle overdue status separately
+                    let matchesStatus = true;
+                    if (statusValue === 'overdue') {
+                        const endDateText = element.querySelector('.text-danger')?.textContent || '';
+                        matchesStatus = endDateText.includes('Overdue') || element.querySelector('.bg-danger')?.textContent === 'Overdue';
+                    } else if (statusValue) {
+                        matchesStatus = statusData === statusValue;
+                    }
+
+                    // Handle progress filter
+                    let matchesProgress = true;
+                    if (progressValue) {
+                        const [min, max] = progressValue.split('-').map(Number);
+                        const progressPercentage = progressData * 100;
+
+                        if (progressValue === '100') {
+                            matchesProgress = progressPercentage === 100;
+                        } else if (min === 0) {
+                            matchesProgress = progressPercentage >= min && progressPercentage <= max;
+                        } else {
+                            matchesProgress = progressPercentage > min && progressPercentage <= max;
+                        }
+                    }
+
+                    const matchesSearch = !searchTerm || searchData.includes(searchTerm);
+
+                    const shouldShow = matchesSearch && matchesStatus && matchesProgress;
+                    element.style.display = shouldShow ? '' : 'none';
+
+                    if (shouldShow) visibleCount++;
+                });
+
+                // Update training count
+                trainingCount.textContent = visibleCount;
+
+                // Show/hide no results message
+                if (visibleCount === 0) {
+                    noResults.classList.remove('d-none');
+                    if (isCardView) {
+                        cardViewContainer.classList.add('d-none');
+                    } else {
+                        listViewContainer.classList.add('d-none');
+                    }
+                } else {
+                    noResults.classList.add('d-none');
+                    if (isCardView) {
+                        cardViewContainer.classList.remove('d-none');
+                    } else {
+                        listViewContainer.classList.remove('d-none');
+                    }
+                }
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', filterTrainings);
+            statusFilter.addEventListener('change', filterTrainings);
+            progressFilter.addEventListener('change', filterTrainings);
+
+            // Clear filters
+            clearFiltersBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                statusFilter.value = '';
+                progressFilter.value = '';
+                filterTrainings();
+            });
+
+            // Delete training functionality
+            const deleteButtons = document.querySelectorAll('.delete-training');
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            const deleteForm = document.getElementById('deleteForm');
+            const trainingTitleToDelete = document.getElementById('trainingTitleToDelete');
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const trainingId = this.getAttribute('data-training-id');
+                    const trainingTitle = this.getAttribute('data-training-title');
+
+                    if (trainingTitle) {
+                        trainingTitleToDelete.textContent = trainingTitle;
+                    }
+                    deleteForm.action = '@Url.Action("DeleteTraining", "Training")' + '?id=' + trainingId + '&employeeId=@employeeId';
+                    deleteModal.show();
+                });
+            });
+
+            // View training details
+            const viewButtons = document.querySelectorAll('.view-training');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const trainingId = this.getAttribute('data-training-id');
+                    if (trainingId) {
+                        window.location.href = '@Url.Action("TrainingDetails", "Training")' + '?id=' + trainingId + '&employeeId=@employeeId';
+                    }
+                });
+            });
+
+            // Edit training
+            const editButtons = document.querySelectorAll('.edit-training');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const trainingId = this.getAttribute('data-training-id');
+                    if (trainingId) {
+                        window.location.href = '@Url.Action("EditTraining", "Training")' + '?id=' + trainingId + '&employeeId=@employeeId';
+                    }
+                });
+            });
+
+            // Add hover effects for cards
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.closest('.training-card-item')) {
+                    const card = e.target.closest('.training-card-item');
+                    card.style.transform = 'translateY(-2px)';
+                    card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                }
+            });
+
+            document.addEventListener('mouseout', function(e) {
+                if (e.target.closest('.training-card-item')) {
+                    const card = e.target.closest('.training-card-item');
+                    card.style.transform = '';
+                    card.style.boxShadow = '';
+                }
+            });
+
+            // Initialize
+            toggleView(false);
+        });
+    </script>
+}
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        if (string.IsNullOrEmpty(status)) return "bg-secondary";
+
+        return status.ToLower() switch
+        {
+            "completed" => "bg-success",
+            "in progress" => "bg-primary",
+            "pending" => "bg-warning",
+            "assigned" => "bg-info",
+            "cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetProgressBarClass(double progress)
+    {
+        var percentage = progress * 100;
+        if (percentage >= 80) return "bg-success";
+        if (percentage >= 50) return "bg-warning";
+        return "bg-danger";
+    }
+
+    public string GetDaysLeftBadgeClass(int daysLeft)
+    {
+        if (daysLeft < 0) return "bg-danger";
+        if (daysLeft <= 3) return "bg-warning";
+        if (daysLeft <= 7) return "bg-info";
+        return "bg-success";
+    }
+}
+
+<style>
+    .training-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .training-card-item {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+
+        .training-card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+
+    .progress {
+        background-color: #e9ecef;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* View toggle button styles */
+    .btn-group .btn.active {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .col-md-6 {
+            margin-bottom: 1rem;
+        }
+
+        .training-actions .btn {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+    }
+</style>

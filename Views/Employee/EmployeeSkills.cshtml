@@ -1,0 +1,1142 @@
+﻿
+@model WebApplication2.Models.ViewModel.EmployeeSkillViewModel
+@{
+    ViewData["Title"] = "Employee Skills Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-primary">Employee Skills Dashboard</h1>
+            <p class="text-muted mb-0">Monitor and manage employee skills and competencies across the organization</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-info btn-sm" onclick="exportDashboardData()">
+                <i class="bi bi-download me-1"></i>Export
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="printDashboard()">
+                <i class="bi bi-printer me-1"></i>Print
+            </button>
+            <a href="@Url.Action("DebugEmployeeData")" class="btn btn-outline-warning btn-sm" target="_blank">
+                <i class="bi bi-bug me-1"></i>Debug
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Stats Cards - Clean Version -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Employees</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEmployees</div>
+                            <small class="text-muted">Across all departments</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Skills Tracked</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalSkillsTracked</div>
+                            <small class="text-muted">Across organization</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-graph-up-arrow fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-danger shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Critical Gaps</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CriticalSkillsGap</div>
+                            <small class="text-muted">Requires attention</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Avg. Skill Level</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.AverageSkillLevel.ToString("F1")</div>
+                            <small class="text-muted">Out of 5.0 maximum</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-award fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <ul class="nav nav-tabs card-header-tabs border-0" id="employeeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                        <i class="bi bi-speedometer2 me-2"></i>Overview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="profiles-tab" data-bs-toggle="tab" data-bs-target="#profiles" type="button" role="tab">
+                        <i class="bi bi-people me-2"></i>Employee Profiles
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="matrix-tab" data-bs-toggle="tab" data-bs-target="#matrix" type="button" role="tab">
+                        <i class="bi bi-table me-2"></i>Skills Matrix
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="employeeTabsContent">
+
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                    <!-- Main Charts Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-bar-chart-line me-2 text-primary"></i>Department Skill Comparison
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="departmentComparisonChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-pie-chart me-2 text-primary"></i>Department Distribution
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="departmentDistributionChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Charts Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-graph-up me-2 text-primary"></i>Skills Gap Analysis
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="skillsGapChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-tags me-2 text-primary"></i>Skills by Category
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="skillsCategoryChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Performance -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-building me-2 text-primary"></i>Department Performance
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.DepartmentStats != null && Model.DepartmentStats.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Department</th>
+                                                        <th>Employees</th>
+                                                        <th>Avg. Skill Level</th>
+                                                        <th>Total Skills</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var dept in Model.DepartmentStats)
+                                                    {
+                                                        <tr>
+                                                            <td class="fw-semibold">@dept.Name</td>
+                                                            <td>@dept.EmployeeCount</td>
+                                                            <td>
+                                                                <span class="badge @GetSkillLevelBadgeClass(dept.AverageSkillLevel)">
+                                                                    @dept.AverageSkillLevel.ToString("F1")
+                                                                </span>
+                                                            </td>
+                                                            <td>@dept.TotalSkills</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted text-center py-3">No department data available</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 text-dark">
+                                        <i class="bi bi-exclamation-triangle me-2 text-primary"></i>Critical Skills Gaps
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.SkillsGapAnalysis != null && Model.SkillsGapAnalysis.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Skill Name</th>
+                                                        <th>Gap Level</th>
+                                                        <th>Employees</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var skill in Model.SkillsGapAnalysis.OrderByDescending(s => s.Gap).Take(8))
+                                                    {
+                                                        <tr>
+                                                            <td class="fw-semibold">@skill.Name</td>
+                                                            <td>
+                                                                <span class="badge @(skill.Gap > 3 ? "bg-danger" : skill.Gap > 2 ? "bg-warning text-dark" : "bg-info")">
+                                                                    @skill.Gap.ToString("F1")
+                                                                </span>
+                                                            </td>
+                                                            <td>@skill.EmployeeCount</td>
+                                                            <td>
+                                                                @if (skill.IsCritical)
+                                                                {
+                                                                    <span class="badge bg-danger">Critical</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-secondary">Normal</span>
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted text-center py-3">No skills gap data available</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Profiles Tab -->
+                <div class="tab-pane fade" id="profiles" role="tabpanel" aria-labelledby="profiles-tab">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 text-dark">Employee Profiles</h5>
+                            <span class="badge bg-primary">@Model.TotalEmployees Employees</span>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Employees != null && Model.Employees.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var employee in Model.Employees)
+                                    {
+                                        <div class="col-md-6 col-lg-4 mb-4">
+                                            <div class="card employee-profile-card h-100 border-0 shadow-sm">
+                                                <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                                                    <h6 class="card-title mb-0 fw-bold">@employee.FirstName @employee.LastName</h6>
+                                                    <span class="badge @GetDepartmentBadgeClass(employee.Department)">@employee.Department</span>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="employee-info mb-3">
+                                                        <p class="mb-2">
+                                                            <i class="bi bi-envelope me-2 text-muted"></i>
+                                                            <small class="text-dark">@employee.Email</small>
+                                                        </p>
+                                                        <p class="mb-2">
+                                                            <i class="bi bi-briefcase me-2 text-muted"></i>
+                                                            <small class="text-dark">@employee.Position</small>
+                                                        </p>
+                                                        <p class="mb-0">
+                                                            <i class="bi bi-telephone me-2 text-muted"></i>
+                                                            <small class="text-dark">@(string.IsNullOrEmpty(employee.Phone) ? "N/A" : employee.Phone)</small>
+                                                        </p>
+                                                    </div>
+
+                                                    @if (employee.HireDate != null)
+                                                    {
+                                                        <div class="mb-3">
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-calendar me-1"></i>
+                                                                Hired: @employee.HireDate
+                                                            </small>
+                                                        </div>
+                                                    }
+
+                                                    <div class="employee-actions">
+                                                        <a href="@Url.Action("Details", new { id = employee.Id })"
+                                                           class="btn btn-outline-primary btn-sm w-100">
+                                                            <i class="bi bi-eye me-1"></i>View Full Profile
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="bi bi-people display-1 text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Employee Profiles Available</h5>
+                                    <p class="text-muted">No employee data available in the system.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills Matrix Tab -->
+                <div class="tab-pane fade" id="matrix" role="tabpanel" aria-labelledby="matrix-tab">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-0 text-dark">Skills Competency Matrix</h5>
+                                <p class="text-muted mb-0">Comprehensive view of employee skills and proficiency levels</p>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary me-2">All Departments</span>
+                                <span class="badge bg-info">@Model.SkillsMatrix.Count Employees</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+
+                            <!-- Skills Level Legend -->
+                            <div class="alert alert-light border mb-4">
+                                <h6 class="alert-heading mb-3">
+                                    <i class="bi bi-info-circle me-2 text-primary"></i>Skills Competency Level System
+                                </h6>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge skill-level-1">Beginner (1)</span>
+                                    <span class="badge skill-level-2">Basic (2)</span>
+                                    <span class="badge skill-level-3">Intermediate (3)</span>
+                                    <span class="badge skill-level-4">Advanced (4)</span>
+                                    <span class="badge skill-level-5">Expert (5)</span>
+                                </div>
+                                <small class="text-muted mb-0">Hover over any skill level to see detailed description</small>
+                            </div>
+
+                            <!-- Matrix Controls -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                                        <input type="text" id="matrixSearch" class="form-control" placeholder="Search employees...">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="departmentFilter">
+                                        <option value="">All Departments</option>
+                                        @if (Model.DepartmentStats != null)
+                                        {
+                                            foreach (var dept in Model.DepartmentStats)
+                                            {
+                                                <option value="@dept.Name">@dept.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="skillLevelFilter">
+                                        <option value="">All Skill Levels</option>
+                                        <option value="1">Beginner (1)</option>
+                                        <option value="2">Basic (2)</option>
+                                        <option value="3">Intermediate (3)</option>
+                                        <option value="4">Advanced (4)</option>
+                                        <option value="5">Expert (5)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @if (Model.SkillsMatrix != null && Model.SkillsMatrix.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm" id="skillsMatrixTable">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="border-end">Employee / Department</th>
+                                                <th class="text-center border-end">
+                                                    <div class="fw-semibold">Financial Modeling</div>
+                                                    <small class="text-muted">Budgeting & Forecasting</small>
+                                                </th>
+                                                <th class="text-center border-end">
+                                                    <div class="fw-semibold">Data Analysis</div>
+                                                    <small class="text-muted">Analytics & Insights</small>
+                                                </th>
+                                                <th class="text-center border-end">
+                                                    <div class="fw-semibold">Risk Assessment</div>
+                                                    <small class="text-muted">Risk Analysis & Mitigation</small>
+                                                </th>
+                                                <th class="text-center border-end">
+                                                    <div class="fw-semibold">Project Management</div>
+                                                    <small class="text-muted">Planning & Execution</small>
+                                                </th>
+                                                <th class="text-center">
+                                                    <div class="fw-semibold">Report Writing</div>
+                                                    <small class="text-muted">Documentation & Reporting</small>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var employee in Model.SkillsMatrix)
+                                            {
+                                                <tr data-department="@employee.Department">
+                                                    <td class="border-end">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold;">
+                                                                    @GetInitials(employee.EmployeeName)
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <div class="fw-semibold text-dark">@employee.EmployeeName</div>
+                                                                <div class="mt-1">
+                                                                    <span class="badge @GetDepartmentBadgeClass(employee.Department)">
+                                                                        @employee.Department
+                                                                    </span>
+                                                                </div>
+                                                                <small class="text-muted">@employee.Email</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="@GetSkillLevelClass(employee.FinancialModeling) text-center border-end skill-cell"
+                                                        data-skill-level="@GetSkillLevelNumber(employee.FinancialModeling)"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@GetSkillLevelDescription(employee.FinancialModeling)">
+                                                        <div class="skill-level-display">
+                                                            <span class="skill-number fw-bold">@GetSkillLevelNumber(employee.FinancialModeling)</span>
+                                                            <div class="skill-text small">@employee.FinancialModeling</div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="@GetSkillLevelClass(employee.DataAnalysis) text-center border-end skill-cell"
+                                                        data-skill-level="@GetSkillLevelNumber(employee.DataAnalysis)"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@GetSkillLevelDescription(employee.DataAnalysis)">
+                                                        <div class="skill-level-display">
+                                                            <span class="skill-number fw-bold">@GetSkillLevelNumber(employee.DataAnalysis)</span>
+                                                            <div class="skill-text small">@employee.DataAnalysis</div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="@GetSkillLevelClass(employee.RiskAssessment) text-center border-end skill-cell"
+                                                        data-skill-level="@GetSkillLevelNumber(employee.RiskAssessment)"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@GetSkillLevelDescription(employee.RiskAssessment)">
+                                                        <div class="skill-level-display">
+                                                            <span class="skill-number fw-bold">@GetSkillLevelNumber(employee.RiskAssessment)</span>
+                                                            <div class="skill-text small">@employee.RiskAssessment</div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="@GetSkillLevelClass(employee.ProjectManagement) text-center border-end skill-cell"
+                                                        data-skill-level="@GetSkillLevelNumber(employee.ProjectManagement)"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@GetSkillLevelDescription(employee.ProjectManagement)">
+                                                        <div class="skill-level-display">
+                                                            <span class="skill-number fw-bold">@GetSkillLevelNumber(employee.ProjectManagement)</span>
+                                                            <div class="skill-text small">@employee.ProjectManagement</div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="@GetSkillLevelClass(employee.ReportWriting) text-center skill-cell"
+                                                        data-skill-level="@GetSkillLevelNumber(employee.ReportWriting)"
+                                                        data-bs-toggle="tooltip"
+                                                        title="@GetSkillLevelDescription(employee.ReportWriting)">
+                                                        <div class="skill-level-display">
+                                                            <span class="skill-number fw-bold">@GetSkillLevelNumber(employee.ReportWriting)</span>
+                                                            <div class="skill-text small">@employee.ReportWriting</div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="bi bi-table display-1 text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Skills Matrix Data Available</h5>
+                                    <p class="text-muted">Employee skills data will appear here once available.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetSkillLevelClass(string level)
+    {
+        if (string.IsNullOrEmpty(level)) return "";
+
+        return level?.ToLower() switch
+        {
+            "beginner" or "1" => "skill-level-1",
+            "basic" or "2" => "skill-level-2",
+            "intermediate" or "3" => "skill-level-3",
+            "advanced" or "4" => "skill-level-4",
+            "expert" or "master" or "5" => "skill-level-5",
+            _ => ""
+        };
+    }
+
+    public string GetSkillLevelNumber(string level)
+    {
+        if (string.IsNullOrEmpty(level)) return "N/A";
+
+        return level?.ToLower() switch
+        {
+            "beginner" => "1",
+            "basic" => "2",
+            "intermediate" => "3",
+            "advanced" => "4",
+            "expert" or "master" => "5",
+            "1" => "1",
+            "2" => "2",
+            "3" => "3",
+            "4" => "4",
+            "5" => "5",
+            _ => "N/A"
+        };
+    }
+
+    public string GetSkillLevelDescription(string level)
+    {
+        return level?.ToLower() switch
+        {
+            "beginner" or "1" => "Basic awareness, needs guidance and supervision",
+            "basic" or "2" => "Can perform tasks with guidance and supervision",
+            "intermediate" or "3" => "Works independently on routine tasks",
+            "advanced" or "4" => "Handles complex tasks, can mentor others",
+            "expert" or "master" or "5" => "Subject matter expert, drives best practices",
+            _ => "Skill level not assessed"
+        };
+    }
+
+    public string GetDepartmentBadgeClass(string department)
+    {
+        return department?.ToLower() switch
+        {
+            "budget analysis" => "bg-primary",
+            "risk management" => "bg-success",
+            "compliance" => "bg-warning text-dark",
+            "data analysis" => "bg-info",
+            "financial planning" => "bg-secondary",
+            "audit" => "bg-danger",
+            "treasury operations" => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetSkillLevelBadgeClass(double level)
+    {
+        if (level < 2) return "bg-danger";
+        if (level < 3) return "bg-warning text-dark";
+        if (level < 4) return "bg-info";
+        if (level < 5) return "bg-primary";
+        if (level == 5) return "bg-success";
+        return "bg-secondary";
+    }
+
+    public string GetInitials(string fullName)
+    {
+        if (string.IsNullOrEmpty(fullName)) return "??";
+        var names = fullName.Split(' ');
+        if (names.Length >= 2)
+            return $"{names[0][0]}{names[1][0]}".ToUpper();
+        return fullName.Length >= 2 ? fullName.Substring(0, 2).ToUpper() : fullName.ToUpper();
+    }
+
+    // Helper methods to calculate actual data for charts
+    public Dictionary<string, double> GetDepartmentSkillAverages()
+    {
+        var averages = new Dictionary<string, double>();
+        if (Model.DepartmentStats != null)
+        {
+            foreach (var dept in Model.DepartmentStats)
+            {
+                averages[dept.Name] = dept.AverageSkillLevel;
+            }
+        }
+        return averages;
+    }
+
+    public Dictionary<string, int> GetDepartmentEmployeeCounts()
+    {
+        var counts = new Dictionary<string, int>();
+        if (Model.DepartmentStats != null)
+        {
+            foreach (var dept in Model.DepartmentStats)
+            {
+                counts[dept.Name] = dept.EmployeeCount;
+            }
+        }
+        return counts;
+    }
+
+    public Dictionary<string, double> GetTopSkillGaps()
+    {
+        var gaps = new Dictionary<string, double>();
+        if (Model.SkillsGapAnalysis != null)
+        {
+            foreach (var skill in Model.SkillsGapAnalysis.OrderByDescending(s => s.Gap).Take(10))
+            {
+                gaps[skill.Name] = skill.Gap;
+            }
+        }
+        return gaps;
+    }
+
+    public Dictionary<string, int> GetCategorySkillCounts()
+    {
+        var counts = new Dictionary<string, int>();
+        if (Model.CategoryStats != null)
+        {
+            foreach (var category in Model.CategoryStats)
+            {
+                counts[category.CategoryName] = category.SkillCount;
+            }
+        }
+        return counts;
+    }
+}
+
+<style>
+    /* Keep original skill level colors */
+    .skill-level-1 {
+        background-color: #ffcccc;
+        color: #c62828;
+        font-weight: bold;
+    }
+
+    .skill-level-2 {
+        background-color: #ffe6cc;
+        color: #ef6c00;
+        font-weight: bold;
+    }
+
+    .skill-level-3 {
+        background-color: #ffffcc;
+        color: #2e7d32;
+        font-weight: bold;
+    }
+
+    .skill-level-4 {
+        background-color: #e6ffcc;
+        color: #1565c0;
+        font-weight: bold;
+    }
+
+    .skill-level-5 {
+        background-color: #ccffcc;
+        color: #7b1fa2;
+        font-weight: bold;
+    }
+
+    /* Enhanced styling without changing colors */
+    .border-left-primary {
+        border-left: 4px solid #0d6efd !important;
+    }
+
+    .border-left-info {
+        border-left: 4px solid #0dcaf0 !important;
+    }
+
+    .border-left-success {
+        border-left: 4px solid #198754 !important;
+    }
+
+    .border-left-danger {
+        border-left: 4px solid #dc3545 !important;
+    }
+
+    .card {
+        transition: all 0.2s ease;
+    }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        }
+
+    .employee-profile-card {
+        transition: transform 0.2s ease;
+    }
+
+        .employee-profile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+
+    .skill-cell {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+        .skill-cell:hover {
+            transform: scale(1.02);
+            z-index: 5;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+    .skill-level-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 0;
+    }
+
+    .skill-number {
+        font-size: 1.1em;
+    }
+
+    .skill-text {
+        font-size: 0.75em;
+        opacity: 0.9;
+        text-transform: capitalize;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.2s ease;
+    }
+
+        .nav-tabs .nav-link:hover {
+            color: #495057;
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            border-bottom: 3px solid #0d6efd;
+            font-weight: 600;
+        }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.04);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .card-body {
+            padding: 1rem;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .skill-level-display {
+            padding: 2px 0;
+        }
+
+        .skill-number {
+            font-size: 1em;
+        }
+
+        .skill-text {
+            font-size: 0.7em;
+        }
+    }
+
+    /* Clean animations */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Employee Skills Dashboard loaded');
+
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Tab functionality
+            function activateTabFromHash() {
+                const hash = window.location.hash;
+                if (hash) {
+                    const tabElement = document.querySelector(`a[href="${hash}"]`);
+                    if (tabElement) {
+                        const tab = new bootstrap.Tab(tabElement);
+                        tab.show();
+                    }
+                }
+            }
+
+            activateTabFromHash();
+
+            document.addEventListener('shown.bs.tab', function (event) {
+                const hash = event.target.getAttribute('href');
+                if (hash && hash.startsWith('#')) {
+                    window.history.replaceState(null, null, hash);
+                }
+            });
+
+            // Auto-dismiss alerts
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Initialize all charts with real data
+            initializeCharts();
+
+            // Matrix filtering
+            initializeMatrixFilters();
+        });
+
+        function initializeCharts() {
+            // Department Comparison Chart - Using actual department averages
+            const deptComparisonCtx = document.getElementById('departmentComparisonChart')?.getContext('2d');
+            if (deptComparisonCtx) {
+                @{
+                            var departmentAverages = GetDepartmentSkillAverages();
+                            var departmentLabels = departmentAverages.Keys.ToList();
+                            var averageValues = departmentAverages.Values.ToList();
+                }
+
+                new Chart(deptComparisonCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", departmentLabels.Select(d => $"'{d}'")))],
+                        datasets: [{
+                            label: 'Average Skill Level',
+                            data: [@string.Join(", ", averageValues)],
+                            backgroundColor: '#0d6efd',
+                            borderColor: '#0a58ca',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Skill Level (1-5)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Avg. Skill Level: ${context.raw.toFixed(1)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Department Distribution Chart - Using actual employee counts
+            const deptDistributionCtx = document.getElementById('departmentDistributionChart')?.getContext('2d');
+            if (deptDistributionCtx) {
+                @{
+                            var departmentCounts = GetDepartmentEmployeeCounts();
+                            var deptLabels = departmentCounts.Keys.ToList();
+                            var employeeCounts = departmentCounts.Values.ToList();
+                }
+
+                new Chart(deptDistributionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", deptLabels.Select(d => $"'{d}'")))],
+                        datasets: [{
+                            data: [@string.Join(", ", employeeCounts)],
+                            backgroundColor: [
+                                '#0d6efd', '#0dcaf0', '#198754', '#ffc107',
+                                '#dc3545', '#6f42c1', '#fd7e14', '#20c997'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} employees (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Skills Gap Analysis Chart - Using actual gap data
+            const skillsGapCtx = document.getElementById('skillsGapChart')?.getContext('2d');
+            if (skillsGapCtx) {
+                @{
+                            var skillGaps = GetTopSkillGaps();
+                            var skillNames = skillGaps.Keys.ToList();
+                            var gapValues = skillGaps.Values.ToList();
+                }
+
+                new Chart(skillsGapCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", skillNames.Select(s => $"'{s}'")))],
+                        datasets: [{
+                            label: 'Skill Gap',
+                            data: [@string.Join(", ", gapValues)],
+                            backgroundColor: [@Html.Raw(string.Join(", ", gapValues.Select(g => g > 3 ? "'#dc3545'" : g > 2 ? "'#ffc107'" : "'#198754'")))],
+                            borderColor: [@Html.Raw(string.Join(", ", gapValues.Select(g => g > 3 ? "'#dc3545'" : g > 2 ? "'#d39e00'" : "'#146c43'")))],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 5,
+                                title: {
+                                    display: true,
+                                    text: 'Gap Level'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Skills by Category Chart
+            const skillsCategoryCtx = document.getElementById('skillsCategoryChart')?.getContext('2d');
+            if (skillsCategoryCtx) {
+                @{
+                            var categoryCounts = GetCategorySkillCounts();
+                            var categoryNames = categoryCounts.Keys.ToList();
+                            var categoryValues = categoryCounts.Values.ToList();
+                }
+
+                new Chart(skillsCategoryCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", categoryNames.Select(c => $"'{c}'")))],
+                        datasets: [{
+                            data: [@string.Join(", ", categoryValues)],
+                            backgroundColor: [
+                                '#0d6efd', '#0dcaf0', '#198754', '#ffc107',
+                                '#dc3545', '#6f42c1', '#fd7e14'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        return `${label}: ${value} skills`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function initializeMatrixFilters() {
+            const departmentFilter = document.getElementById('departmentFilter');
+            const skillLevelFilter = document.getElementById('skillLevelFilter');
+            const matrixSearch = document.getElementById('matrixSearch');
+            const table = document.getElementById('skillsMatrixTable');
+
+            if (departmentFilter && skillLevelFilter && matrixSearch && table) {
+                departmentFilter.addEventListener('change', filterTable);
+                skillLevelFilter.addEventListener('change', filterTable);
+                matrixSearch.addEventListener('input', filterTable);
+            }
+
+            function filterTable() {
+                const departmentValue = departmentFilter.value;
+                const skillLevelValue = skillLevelFilter.value;
+                const searchValue = matrixSearch.value.toLowerCase();
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const department = row.getAttribute('data-department');
+                    const employeeName = row.querySelector('.fw-semibold').textContent.toLowerCase();
+
+                    const showDepartment = !departmentValue || department === departmentValue;
+                    const showSearch = !searchValue || employeeName.includes(searchValue);
+
+                    let showSkillLevel = true;
+                    if (skillLevelValue) {
+                        const skillCells = row.querySelectorAll('.skill-cell');
+                        showSkillLevel = Array.from(skillCells).some(cell =>
+                            cell.getAttribute('data-skill-level') === skillLevelValue
+                        );
+                    }
+
+                    row.style.display = (showDepartment && showSkillLevel && showSearch) ? '' : 'none';
+                });
+            }
+        }
+
+        function exportDashboardData() {
+            alert('Export functionality would be implemented here');
+        }
+
+        function printDashboard() {
+            window.print();
+        }
+    </script>
+}

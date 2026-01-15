@@ -1,0 +1,865 @@
+﻿@model WebApplication2.Models.ViewModel.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Overview";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid px-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 py-3">
+        <div>
+            <h1 class="h3 mb-1 text-primary">Dashboard Overview</h1>
+            <p class="text-muted mb-0">Comprehensive view of your organization's performance and training activities</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-info btn-sm" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            @* <button class="btn btn-outline-success btn-sm" onclick="exportDashboard()">
+                <i class="bi bi-download me-1"></i>Export
+            </button> *@
+            <div class="dropdown">
+                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear me-1"></i>Quick Actions
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="@Url.Action("CreateTraining", "Training")"><i class="bi bi-plus-circle me-2"></i>Create Training</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("AssignTraining", "Training")"><i class="bi bi-person-plus me-2"></i>Assign Training</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Create", "Reports")"><i class="bi bi-file-text me-2"></i>Generate Report</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="@Url.Action("EmployeeSkills", "Employee")"><i class="bi bi-graph-up me-2"></i>View Skills Matrix</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Key Metrics Row -->
+    <div class="row g-3 mb-4">
+        <!-- Employees Card -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-primary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Employees</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalEmployees</div>
+                            <small class="text-muted">Across all departments</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-people fa-2x text-primary opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trainings Card -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-info shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">Training Activities</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalTrainings</div>
+                            <small class="text-muted">@Model.CompletedTrainings completed</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-journal-check fa-2x text-info opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Rate Card -->
+        @* <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-success shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Completion Rate</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TrainingCompletionRate.ToString("F1")%</div>
+                            <small class="text-muted">@Model.OverallStatus overall</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-graph-up-arrow fa-2x text-success opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+
+        <!-- Skills Card -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-warning shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">Skills Tracked</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalSkillsTracked</div>
+                            <small class="text-muted">@Model.CriticalSkillsGap critical gaps</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-award fa-2x text-warning opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Training Card -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-danger shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">Active Training</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.ActiveTrainings</div>
+                            <small class="text-muted">@Model.InProgressTrainings in progress</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock-history fa-2x text-danger opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avg Skill Level Card -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card metric-card border-start-secondary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="text-xs fw-bold text-secondary text-uppercase mb-1">Avg Skill Level</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.AverageSkillLevel.ToString("F1")</div>
+                            <small class="text-muted">Out of 5.0 maximum</small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-star-fill fa-2x text-secondary opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Detailed Overview Row -->
+    <div class="row g-3 mb-4">
+        <!-- Training Progress Chart -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-speedometer2 me-2 text-primary"></i>Training Progress Overview
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="trainingProgressChart"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div class="row g-2 text-center">
+                            <div class="col-4">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge bg-success me-2"></span>
+                                    <small>Completed: @Model.CompletedTrainings</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge bg-primary me-2"></span>
+                                    <small>In Progress: @Model.InProgressTrainings</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge bg-warning me-2"></span>
+                                    <small>Pending: @Model.PendingTrainings</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Performance -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-building me-2 text-primary"></i>Department Performance
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="chart-container" style="height: 250px;">
+                        @if (Model.TopDepartments.Any())
+                        {
+                            <canvas id="departmentChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                                <i class="bi bi-building display-4 mb-2"></i>
+                                <p class="mb-0">No department data available</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills Overview -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-pie-chart me-2 text-primary"></i>Skills Distribution
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="chart-container" style="height: 250px;">
+                        @if (Model.SkillsByCategory.Any())
+                        {
+                            <canvas id="skillsChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                                <i class="bi bi-pie-chart display-4 mb-2"></i>
+                                <p class="mb-0">No skills data available</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Information Row -->
+    <div class="row g-3 mb-4">
+        <!-- Recent Training Activities -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-clock-history me-2 text-primary"></i>Recent Training Activities
+                    </h5>
+                    <a href="@Url.Action("Index", "Training")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentTrainings.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var training in Model.RecentTrainings.Take(6))
+                            {
+                                <div class="list-group-item px-0 border-0 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1 me-3">
+                                            <h6 class="mb-1 fw-semibold text-dark">@training.Title</h6>
+                                            <p class="mb-1 text-muted small">
+                                                @if (training.Employee != null)
+                                                {
+                                                    <span>@training.Employee.FirstName @training.Employee.LastName</span>
+                                                    <span class="mx-1">•</span>
+                                                }
+                                                <span>@training.Provider</span>
+                                            </p>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-tag me-1 small"></i>
+                                                <small class="text-muted">@training.Status</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end flex-shrink-0">
+                                            <span class="badge @GetStatusBadgeClass(training.Status) mb-2">@training.Status</span>
+                                            @if (training.Progress > 0)
+                                            {
+                                                <div class="d-flex flex-column align-items-end">
+                                                    <div class="progress mb-1" style="width: 80px; height: 6px;">
+                                                        <div class="progress-bar @GetProgressBarClass(training.Progress)"
+                                                             style="width: @(training.Progress * 100)%;"></div>
+                                                    </div>
+                                                    <small class="text-muted">@((training.Progress * 100).ToString("F0"))%</small>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x display-4 mb-3"></i>
+                            <p class="mb-0">No recent training activities</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Trainings & Quick Actions -->
+        <div class="col-xl-6">
+            <div class="row g-3 h-100">
+                <!-- Active Trainings -->
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h5 class="card-title mb-0 text-dark fw-semibold">
+                                <i class="bi bi-list-task me-2 text-primary"></i>Active Trainings
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.UpcomingDeadlines.Any())
+                            {
+                                <div class="list-group list-group-flush">
+                                    @foreach (var training in Model.UpcomingDeadlines.Take(5))
+                                    {
+                                        <div class="list-group-item px-0 border-0 border-bottom">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1 small fw-semibold">@training.Title</h6>
+                                                    <small class="text-muted">Status: @training.Status</small>
+                                                </div>
+                                                <span class="badge @GetStatusBadgeClass(training.Status) flex-shrink-0">
+                                                    @training.Status
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-check-circle display-4 mb-2"></i>
+                                    <p class="mb-0">No active trainings</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h5 class="card-title mb-0 text-dark fw-semibold">
+                                <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("CreateProgram", "Training")" class="btn btn-outline-primary w-100 text-start py-2">
+                                        <i class="bi bi-plus-circle me-2"></i>Create Training
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("AssignTraining", "Training")" class="btn btn-outline-success w-100 text-start py-2">
+                                        <i class="bi bi-person-plus me-2"></i>Assign Training
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("EmployeeSkills", "Employee")" class="btn btn-outline-info w-100 text-start py-2">
+                                        <i class="bi bi-graph-up me-2"></i>Skills Matrix
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("Create", "Reports")" class="btn btn-outline-warning w-100 text-start py-2">
+                                        <i class="bi bi-file-text me-2"></i>Generate Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row - Additional Metrics -->
+    <div class="row g-3">
+        <!-- Top Skill Gaps -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-exclamation-triangle me-2 text-primary"></i>Top Skill Gaps Requiring Attention
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopSkillGaps.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0">Skill Name</th>
+                                        <th class="border-0">Gap Level</th>
+                                        <th class="border-0">Employees Affected</th>
+                                        <th class="border-0">Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var skill in Model.TopSkillGaps.Take(6))
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@skill.Name</td>
+                                            <td>
+                                                <span class="badge @(skill.Gap > 3 ? "bg-danger" : skill.Gap > 2 ? "bg-warning" : "bg-info")">
+                                                    @skill.Gap.ToString("F1")
+                                                </span>
+                                            </td>
+                                            <td>@skill.EmployeeCount</td>
+                                            <td>
+                                                @if (skill.IsCritical)
+                                                {
+                                                    <span class="badge bg-danger">Critical</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">High</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle display-4 mb-2"></i>
+                            <p class="mb-0">No critical skill gaps identified</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Performance Table -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title mb-0 text-dark fw-semibold">
+                        <i class="bi bi-trophy me-2 text-primary"></i>Department Performance Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopDepartments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0">Department</th>
+                                        <th class="border-0">Employees</th>
+                                        <th class="border-0">Avg Skill Level</th>
+                                        <th class="border-0">Completion Rate</th>
+                                        <th class="border-0">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var dept in Model.TopDepartments)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@dept.Name</td>
+                                            <td>@dept.EmployeeCount</td>
+                                            <td>
+                                                <span class="badge @GetSkillLevelBadgeClass(dept.AverageSkillLevel)">
+                                                    @dept.AverageSkillLevel.ToString("F1")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                        <div class="progress-bar bg-success" style="width: @(dept.CompletionRate)%;"></div>
+                                                    </div>
+                                                    <small class="text-nowrap">@dept.CompletionRate.ToString("F0")%</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(dept.CompletionRate >= 80 ? "bg-success" : dept.CompletionRate >= 60 ? "bg-warning" : "bg-danger")">
+                                                    @(dept.CompletionRate >= 80 ? "Excellent" : dept.CompletionRate >= 60 ? "Good" : "Needs Help")
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-building display-4 mb-2"></i>
+                            <p class="mb-0">No department data available</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded - initializing charts...');
+            initializeCharts();
+        });
+
+        function initializeCharts() {
+            // Training Progress Chart
+            const progressCtx = document.getElementById('trainingProgressChart')?.getContext('2d');
+            if (progressCtx) {
+                new Chart(progressCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'In Progress', 'Pending'],
+                        datasets: [{
+                            data: [
+                                @Model.CompletedTrainings,
+                                @Model.InProgressTrainings,
+                                @Model.PendingTrainings
+                            ],
+                            backgroundColor: [
+                                '#198754', '#0dcaf0', '#ffc107'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Department Performance Chart
+            const deptCtx = document.getElementById('departmentChart')?.getContext('2d');
+            if (deptCtx && @Json.Serialize(Model.TopDepartments.Any())) {
+                const departments = @Html.Raw(Json.Serialize(Model.TopDepartments.Select(d => d.Name)));
+                const skillLevels = @Html.Raw(Json.Serialize(Model.TopDepartments.Select(d => d.AverageSkillLevel)));
+
+                new Chart(deptCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: departments,
+                        datasets: [{
+                            label: 'Average Skill Level',
+                            data: skillLevels,
+                            backgroundColor: '#0d6efd',
+                            borderColor: '#0a58ca',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    drawBorder: false
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Skills Distribution Chart
+            const skillsCtx = document.getElementById('skillsChart')?.getContext('2d');
+            if (skillsCtx && @Json.Serialize(Model.SkillsByCategory.Any())) {
+                const categories = @Html.Raw(Json.Serialize(Model.SkillsByCategory.Select(c => c.CategoryName)));
+                const skillCounts = @Html.Raw(Json.Serialize(Model.SkillsByCategory.Select(c => c.SkillCount)));
+
+                new Chart(skillsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories,
+                        datasets: [{
+                            data: skillCounts,
+                            backgroundColor: [
+                                '#0d6efd', '#0dcaf0', '#198754', '#ffc107',
+                                '#dc3545', '#6f42c1', '#fd7e14', '#20c997'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function refreshDashboard() {
+            const btn = event?.target || event?.srcElement;
+            const originalHtml = btn.innerHTML;
+
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1 spinner-border spinner-border-sm"></i>Refreshing...';
+            btn.disabled = true;
+
+            fetch('@Url.Action("GetDashboardStats", "Dashboard")')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showNotification(data.message || 'Error refreshing dashboard', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error refreshing dashboard', 'error');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+        }
+
+        function exportDashboard() {
+            fetch('@Url.Action("ExportDashboard", "Dashboard")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, data.success ? 'success' : 'error');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error exporting dashboard', 'error');
+            });
+        }
+
+        function showNotification(message, type) {
+            // Remove existing notifications
+            const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+            existingAlerts.forEach(alert => alert.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+}
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "completed" => "bg-success",
+            "in progress" => "bg-primary",
+            "pending" => "bg-warning",
+            "assigned" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetProgressBarClass(double progress)
+    {
+        var percentage = progress * 100;
+        if (percentage >= 80) return "bg-success";
+        if (percentage >= 50) return "bg-warning";
+        return "bg-danger";
+    }
+
+    public string GetSkillLevelBadgeClass(double level)
+    {
+        if (level < 2) return "bg-danger";
+        if (level < 3) return "bg-warning text-dark";
+        if (level < 4) return "bg-info";
+        if (level < 5) return "bg-primary";
+        if (level == 5) return "bg-success";
+        return "bg-secondary";
+    }
+}
+
+<style>
+    .border-start-primary {
+        border-left: 4px solid #0d6efd !important;
+    }
+
+    .border-start-info {
+        border-left: 4px solid #0dcaf0 !important;
+    }
+
+    .border-start-success {
+        border-left: 4px solid #198754 !important;
+    }
+
+    .border-start-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+
+    .border-start-danger {
+        border-left: 4px solid #dc3545 !important;
+    }
+
+    .border-start-secondary {
+        border-left: 4px solid #6c757d !important;
+    }
+
+    .metric-card {
+        transition: all 0.2s ease;
+    }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+        }
+
+    .card {
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+        .card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        }
+
+    .chart-container {
+        position: relative;
+    }
+
+    .list-group-item {
+        padding: 1rem 0;
+        border-color: #f8f9fa !important;
+    }
+
+        .list-group-item:last-child {
+            border-bottom: none !important;
+        }
+
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 4px;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .container-fluid {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .h5 {
+            font-size: 1.1rem;
+        }
+
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+
+        .metric-card .fa-2x {
+            font-size: 1.5em !important;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .d-flex.gap-2 {
+            flex-wrap: wrap;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+</style>

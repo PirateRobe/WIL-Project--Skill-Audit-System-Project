@@ -1,0 +1,278 @@
+﻿@model WebApplication2.Models.Training
+
+@{
+    ViewData["Title"] = "Training Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Training Details</h1>
+        <p class="text-muted mb-0">@Model.Title</p>
+    </div>
+    @* <div>
+        <a asp-action="Details" asp-route-id="@Model.EmployeeId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Employee
+        </a>
+    </div> *@
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+} 
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Training Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Training Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Title</label>
+                            <p class="mb-0">@Model.Title</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Provider</label>
+                            <p class="mb-0">@Model.Provider</p>
+                        </div>
+                        @* <div class="mb-3">
+                            <label class="form-label fw-semibold">Status</label>
+                            <div>
+                                @if (Model.Status == "Completed")
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-award me-1"></i>Completed
+                                    </span>
+                                }
+                                else if (Model.Status == "InProgress")
+                                {
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-play-circle me-1"></i>In Progress
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@Model.Status</span>
+                                }
+                            </div>
+                        </div> *@
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <p class="mb-0">@Model.StartDateDateTime().ToString("MMM dd, yyyy")</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">End Date</label>
+                            <p class="mb-0">@Model.EndDateDateTime().ToString("MMM dd, yyyy")</p>
+                        </div>
+                        @* <div class="mb-3">
+                            <label class="form-label fw-semibold">Progress</label>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar @GetProgressBarClass(Model.Progress)"
+                                     role="progressbar"
+                                     style="width: @Model.Progress%;"
+                                     aria-valuenow="@Model.Progress"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-muted">@Model.Progress.ToString("F1")% Complete</small>
+                        </div> *@
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <p class="mb-0">@Model.Description</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Certificate Section -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Certificate
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.CertificateUrl))
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Certificate Available</strong>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-earmark-pdf text-danger me-3" style="font-size: 2rem;"></i>
+                            <div>
+                                <h6 class="mb-1">@(Model.CertificateFileName ?? "Certificate")</h6>
+                                @if (Model.CertificateIssueDate.HasValue)
+                                {
+                                    <small class="text-muted">
+                                        Issued on: @Model.CertificateIssueDate.Value.ToString("MMM dd, yyyy")
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <a href="@Model.CertificateUrl" target="_blank" class="btn btn-primary me-2">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                            <a href="@Model.CertificateUrl" download class="btn btn-outline-primary">
+                                <i class="bi bi-download me-1"></i>Download
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                @* {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>No Certificate Uploaded</strong> - Upload a certificate when training is completed.
+                    </div>
+
+                    <!-- Certificate Upload Form -->
+                    <form asp-action="UploadCertificate" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
+                        <input type="hidden" name="trainingId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Upload Certificate</label>
+                            <input type="file" name="certificateFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required />
+                            <div class="form-text">
+                                Supported formats: PDF, JPG, JPEG, PNG (Max 5MB)
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-upload me-1"></i>Upload Certificate
+                        </button>
+                    </form> *@
+                    <p>No certificate provided</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.Status != "Completed")
+                    {
+                        <form asp-action="MarkAsComplete" method="post" class="d-grid">
+                            <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
+                            <input type="hidden" name="trainingId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-award me-1"></i>Mark as Complete
+                            </button>
+                        </form>
+                    }
+
+                    <a href="@Url.Action("Details", "Employee", new { id = Model.EmployeeId })" class="btn btn-outline-primary">
+                        <i class="bi bi-person me-1"></i>View Employee
+                    </a>
+
+                    @if (!string.IsNullOrEmpty(Model.CertificateUrl))
+                    {
+                        <a href="@Model.CertificateUrl" target="_blank" class="btn btn-outline-info">
+                            <i class="bi bi-file-pdf me-1"></i>View Certificate
+                        </a>
+                    }
+                </div>
+            </div>
+        </div> *@
+
+        @* <!-- Training Statistics -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Training Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="h4 mb-0 text-primary">@Model.Progress.ToString("F1")%</div>
+                        <small class="text-muted">Progress</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 mb-0 text-success">
+                            @if (!string.IsNullOrEmpty(Model.CertificateUrl))
+                            {
+                                <i class="bi bi-check-lg"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-dash"></i>
+                            }
+                        </div>
+                        <small class="text-muted">Certificate</small>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Add any JavaScript for certificate preview or validation here
+        document.addEventListener('DOMContentLoaded', function() {
+            // File input validation
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const maxSize = 5 * 1024 * 1024; // 5MB
+                        if (file.size > maxSize) {
+                            alert('File size must be less than 5MB');
+                            e.target.value = '';
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+@functions {
+    private string GetProgressBarClass(double progress)
+    {
+        if (progress >= 100) return "bg-success";
+        if (progress >= 75) return "bg-primary";
+        if (progress >= 50) return "bg-info";
+        if (progress >= 25) return "bg-warning";
+        return "bg-danger";
+    }
+}

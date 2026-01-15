@@ -1,0 +1,1039 @@
+﻿@using Microsoft.CodeAnalysis.Elfie.Extensions
+@using WebApplication2.Extentions
+@model WebApplication2.Models.Employee
+@{
+    ViewData["Title"] = "Employee Details - " + Model?.FirstName + " " + Model?.LastName;
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Employee Details</h1>
+            <p class="text-muted mb-0">@Model?.FirstName @Model?.LastName - @Model?.Department</p>
+        </div>
+        <div>
+            <a href="@Url.Action("EmployeeSkills", "Employee")" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    @if (Model != null)
+    {
+        <!-- Success/Error Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="employeeTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="bi bi-house me-1"></i>Overview
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="skills-tab" data-bs-toggle="tab" data-bs-target="#skills" type="button" role="tab">
+                    <i class="bi bi-tools me-1"></i>Skills (@(Model.Skills?.Count ?? 0))
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="qualifications-tab" data-bs-toggle="tab" data-bs-target="#qualifications" type="button" role="tab">
+                    <i class="bi bi-mortarboard me-1"></i>Qualifications (@(Model.Qualifications?.Count ?? 0))
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trainings-tab" data-bs-toggle="tab" data-bs-target="#trainings" type="button" role="tab">
+                    <i class="bi bi-book me-1"></i>Trainings (@(Model.Trainings?.Count ?? 0))
+                </button>
+            </li>
+            @* <li class="nav-item" role="presentation">
+                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">
+                    <i class="bi bi-files me-1"></i>Documents
+                </button>
+            </li> *@
+        </ul>
+
+        <div class="tab-content" id="employeeTabsContent">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row">
+                    <!-- Basic Information -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-3 text-center">
+                                        @if (!string.IsNullOrEmpty(Model.ProfileImageUrl))
+                                        {
+                                            <img src="@Model.ProfileImageUrl" alt="Profile" class="img-thumbnail rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                                <i class="bi bi-person-fill text-white" style="font-size: 2rem;"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-9">
+                                        <h4>@Model.FirstName @Model.LastName</h4>
+                                        <p class="text-muted mb-1">@Model.Position</p>
+                                        <span class="badge @GetDepartmentBadgeClass(Model.Department)">
+                                            @Model.Department
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <dl class="row">
+                                    <dt class="col-sm-4">Employee ID:</dt>
+                                    <dd class="col-sm-8">
+                                        @if (!string.IsNullOrEmpty(Model.EmployeeId))
+                                        {
+                                            <code>@Model.EmployeeId</code>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not assigned</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-4">User ID:</dt>
+                                    <dd class="col-sm-8"><code>@Model.UserId</code></dd>
+
+                                    <dt class="col-sm-4">Email:</dt>
+                                    <dd class="col-sm-8">
+                                        <a href="mailto:@Model.Email">@Model.Email</a>
+                                    </dd>
+
+                                    <dt class="col-sm-4">Phone:</dt>
+                                    <dd class="col-sm-8">
+                                        @if (!string.IsNullOrEmpty(Model.Phone))
+                                        {
+                                            <a href="tel:@Model.Phone">@Model.Phone</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-4">Hire Date:</dt>
+                                    <dd class="col-sm-8">
+                                        @if (Model.HireDateDateTime.Year >= 2000)
+                                        {
+                                            @Model.HireDateDateTime.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not set</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-4">Member Since:</dt>
+                                    <dd class="col-sm-8">
+                                        @if (Model.CreatedAtDateTime.Year >= 2000)
+                                        {
+                                            @Model.CreatedAtDateTime.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not set</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-4">Status:</dt>
+                                    <dd class="col-sm-8">
+                                        @if (Model.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Inactive</span>
+                                        }
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Certificate Summary -->
+                        @* <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-award me-2"></i>Certificates Summary
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                @{
+                                    var certifiedTrainings = Model.Trainings?.Where(t => !string.IsNullOrEmpty(t.CertificateUrl) || !string.IsNullOrEmpty(t.CertificatePdfUrl)).ToList();
+                                    var totalCertificates = certifiedTrainings?.Count ?? 0;
+                                    var completedTrainingsCount = Model.Trainings?.Count(t => t.Status == "Completed") ?? 0;
+                                    var pendingCertificatesCount = Math.Max(0, completedTrainingsCount - totalCertificates);
+                                }
+
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-primary">@totalCertificates</div>
+                                            <small class="text-muted">Total Certificates</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-success">@completedTrainingsCount</div>
+                                            <small class="text-muted">Completed Trainings</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-warning">@pendingCertificatesCount</div>
+                                            <small class="text-muted">Pending Certificates</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (totalCertificates > 0)
+                                {
+                                    <div class="mt-3">
+                                        <h6>Recent Certificates:</h6>
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var training in certifiedTrainings.Take(3))
+                                            {
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <small class="fw-semibold">@training.Title</small>
+                                                        <br>
+                                                        <small class="text-muted">@training.Provider</small>
+                                                    </div>
+                                                    <div>
+                                                        @if (!string.IsNullOrEmpty(training.CertificatePdfUrl))
+                                                        {
+                                                            <a href="@Url.Action("ViewTrainingCertificate", new { employeeId = Model.Id, trainingId = training.Id })" target="_blank" class="btn btn-sm btn-outline-success">
+                                                                <i class="bi bi-file-pdf"></i> PDF
+                                                            </a>
+                                                        }
+                                                        else if (!string.IsNullOrEmpty(training.CertificateUrl))
+                                                        {
+                                                            <a href="@training.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                <i class="bi bi-eye"></i> View
+                                                            </a>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (totalCertificates > 3)
+                                        {
+                                            <div class="text-center mt-2">
+                                                <small class="text-muted">and @(totalCertificates - 3) more certificates...</small>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-3">
+                                        <i class="bi bi-file-earmark-text text-muted" style="font-size: 2rem;"></i>
+                                        <p class="text-muted mt-2 mb-0">No certificates yet</p>
+                                    </div>
+                                }
+                            </div>
+                        </div> *@
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Skills Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-primary">@(Model.Skills?.Count ?? 0)</div>
+                                            <small class="text-muted">Total Skills</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-info">
+                                                @(Model.AverageSkillLevel.ToString("F1"))
+                                            </div>
+                                            <small class="text-muted">Avg. Level</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-warning">
+                                                @(Model.TotalSkillsGap)
+                                            </div>
+                                            <small class="text-muted">Needs Improvement</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Collections -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Additional Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-success">@(Model.Qualifications?.Count ?? 0)</div>
+                                            <small class="text-muted">Qualifications</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-purple">@(Model.Trainings?.Count ?? 0)</div>
+                                            <small class="text-muted">Trainings</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="metric-item">
+                                            <div class="h4 text-danger">@(Model.CriticalGapsCount)</div>
+                                            <small class="text-muted">Critical Gaps</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                      @*   <!-- Quick Actions -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="@Url.Action("TrainingCertificates", new { employeeId = Model.Id })"
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-award me-1"></i>Training Certificates
+                                    </a>
+                                    <a href="@Url.Action("EmployeeDocuments", new { id = Model.Id })"
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-folder me-1"></i>All Documents
+                                    </a>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                                        <i class="bi bi-printer me-1"></i>Print Profile
+                                    </button>
+                                </div>
+                            </div>
+                        </div> *@
+
+                        <!-- Certificate Upload Quick Action -->
+                        @{
+                            var pendingCertificateTrainings = Model.Trainings?.Where(t => t.Status == "Completed" && string.IsNullOrEmpty(t.CertificateUrl) && string.IsNullOrEmpty(t.CertificatePdfUrl)).ToList();
+                        }
+                        @if (pendingCertificateTrainings?.Any() == true)
+                        {
+                            <div class="card mt-3 border-warning">
+                                <div class="card-header bg-warning bg-opacity-10">
+                                    <h5 class="card-title mb-0 text-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>Pending Certificates
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="small text-muted mb-2">
+                                        The following completed trainings need certificates:
+                                    </p>
+                                    <div class="list-group list-group-flush small">
+                                        @foreach (var training in pendingCertificateTrainings.Take(3))
+                                        {
+                                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                <span>@training.Title</span>
+                                                <a href="@Url.Action("UploadCertificate", "Training", new { employeeId = Model.Id, trainingId = training.Id })"
+                                                   class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-upload me-1"></i>Upload
+                                                </a>
+                                            </div>
+                                        }
+                                    </div>
+                                    @if (pendingCertificateTrainings.Count > 3)
+                                    {
+                                        <div class="text-center mt-2">
+                                            <small class="text-muted">and @(pendingCertificateTrainings.Count - 3) more...</small>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Tab -->
+            <div class="tab-pane fade" id="skills" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Skills (@(Model.Skills?.Count ?? 0))</h5>
+                        <span class="badge bg-primary">@(Model.Skills?.Count ?? 0) total</span>
+                    </div>
+                    <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                        @if (Model.Skills?.Any() == true)
+                        {
+                            foreach (var skill in Model.Skills)
+                            {
+                                <div class="mb-3 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <strong class="text-primary">@skill.Name</strong>
+                                        <span class="badge @GetSkillLevelClass(skill.Level)">
+                                            Level: @skill.Level
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>Experience: @skill.YearsOfExperience years<br />
+                                            <i class="bi bi-tags me-1"></i>Category: @skill.Category
+                                        </small>
+                                    </div>
+                                    @if (skill.CreatedAt != null)
+                                    {
+                                        <div class="mt-1">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar me-1"></i>Added: @skill.CreatedAt.ToDateTime().ToString("MMM dd, yyyy")
+                                            </small>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-tools text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2">No skills added yet</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Qualifications Tab -->
+            <div class="tab-pane fade" id="qualifications" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Qualifications (@(Model.Qualifications?.Count ?? 0))</h5>
+                        <div>
+                            <span class="badge bg-success">@(Model.Qualifications?.Count ?? 0) total</span>
+                            @* <a href="@Url.Action("AddQualification", new { employeeId = Model.Id })" class="btn btn-sm btn-primary ms-2">
+                                <i class="bi bi-plus-circle me-1"></i>Add Qualification
+                            </a> *@
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Qualifications?.Any() == true)
+                        {
+                            <div class="row">
+                                @foreach (var qual in Model.Qualifications)
+                                {
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title text-success">@qual.Degree</h6>
+                                                    <span class="badge bg-secondary">@qual.YearCompleted</span>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-building me-1"></i>@qual.Institution<br />
+                                                        @if (!string.IsNullOrEmpty(qual.FieldOfStudy))
+                                                        {
+                                                            <text><i class="bi bi-book me-1"></i>Field: @qual.FieldOfStudy<br /></text>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(qual.Grade))
+                                                        {
+                                                            <text><i class="bi bi-award me-1"></i>Grade: @qual.Grade</text>
+                                                        }
+                                                    </small>
+                                                </div>
+
+                                                <!-- Document Links -->
+                                                <div class="qualification-documents">
+                                                    @if (qual.HasDocuments)
+                                                    {
+                                                        <div class="mb-2">
+                                                            <strong class="small">Documents:</strong>
+                                                        </div>
+                                                        <div class="btn-group w-100">
+                                                            @if (!string.IsNullOrEmpty(qual.CertificatePdfUrl))
+                                                            {
+                                                                <a href="@Url.Action("DownloadQualificationDocument", new { employeeId = Model.Id, qualificationId = qual.Id, documentType = "certificate" })"
+                                                                   class="btn btn-sm btn-outline-success" title="Download Certificate">
+                                                                    <i class="bi bi-file-pdf me-1"></i>Certificate
+                                                                </a>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(qual.TranscriptPdfUrl))
+                                                            {
+                                                                <a href="@Url.Action("DownloadQualificationDocument", new { employeeId = Model.Id, qualificationId = qual.Id, documentType = "transcript" })"
+                                                                   class="btn btn-sm btn-outline-primary" title="Download Transcript">
+                                                                    <i class="bi bi-file-text me-1"></i>Transcript
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="alert alert-warning py-2">
+                                                            <small>
+                                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                                No documents uploaded
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                @if (qual.CreatedAt != null)
+                                                {
+                                                    <div class="mt-2 pt-2 border-top">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-calendar me-1"></i>Added: @qual.CreatedAt.ToDateTime().ToString("MMM dd, yyyy")
+                                                        </small>
+                                                    </div>
+                                                }
+
+                                                @* <div class="mt-3">
+                                                    <div class="btn-group w-100">
+                                                        <a href="@Url.Action("EditQualification", new { employeeId = Model.Id, qualificationId = qual.Id })"
+                                                           class="btn btn-sm btn-outline-secondary">
+                                                            <i class="bi bi-pencil me-1"></i>Edit
+                                                        </a>
+                                                        <a href="@Url.Action("UploadQualificationDocument", new { employeeId = Model.Id, qualificationId = qual.Id })"
+                                                           class="btn btn-sm btn-outline-info">
+                                                            <i class="bi bi-upload me-1"></i>Upload Docs
+                                                        </a>
+                                                    </div>
+                                                </div> *@
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @* <div class="text-center py-5">
+                                <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2 mb-3">No qualifications added yet</p>
+                                <a href="@Url.Action("AddQualification", new { employeeId = Model.Id })" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Add First Qualification
+                                </a>
+                            </div> *@
+                            <div>No Qualifications</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trainings Tab -->
+            <div class="tab-pane fade" id="trainings" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Trainings (@(Model.Trainings?.Count ?? 0))</h5>
+                        <div>
+                            <span class="badge bg-purple">@(Model.Trainings?.Count ?? 0) total</span>
+                            <span class="badge bg-success ms-1">@(Model.Trainings?.Count(t => !string.IsNullOrEmpty(t.CertificateUrl) || !string.IsNullOrEmpty(t.CertificatePdfUrl)) ?? 0) certified</span>
+                            <a href="@Url.Action("TrainingCertificates", new { employeeId = Model.Id })" class="btn btn-sm btn-info ms-2">
+                                <i class="bi bi-award me-1"></i>All Certificates
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                        @if (Model.Trainings?.Any() == true)
+                        {
+                            foreach (var training in Model.Trainings)
+                            {
+                                var startDate = training.StartDateDateTime();
+                                var endDate = training.EndDateDateTime();
+                                var isActive = startDate <= DateTime.Today && endDate >= DateTime.Today && training.Status != "Completed";
+                                var isUpcoming = startDate > DateTime.Today;
+                                var isOverdue = endDate < DateTime.Today && training.Status != "Completed";
+                                var hasCertificate = !string.IsNullOrEmpty(training.CertificateUrl) || !string.IsNullOrEmpty(training.CertificatePdfUrl);
+
+                                <div class="mb-3 p-3 border rounded @(hasCertificate ? "border-success border-2" : "")">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong class="text-purple">
+                                                @training.Title
+                                                @if (hasCertificate)
+                                                {
+                                                    <i class="bi bi-patch-check-fill text-success ms-1" title="Certificate Available"></i>
+                                                }
+                                            </strong>
+                                            <div class="mt-1">
+                                                <span class="badge @GetTrainingStatusBadge(training.Status)">@training.Status</span>
+                                                @if (hasCertificate)
+                                                {
+                                                    <span class="badge bg-success ms-1">
+                                                        <i class="bi bi-award me-1"></i>Certified
+                                                    </span>
+                                                }
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge bg-success ms-1">Active</span>
+                                                }
+                                                else if (isUpcoming)
+                                                {
+                                                    <span class="badge bg-info ms-1">Upcoming</span>
+                                                }
+                                                else if (isOverdue)
+                                                {
+                                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted d-block">
+                                                @startDate.ToString("MMM dd, yyyy")
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-building me-1"></i>Provider: @training.Provider<br />
+                                            <i class="bi bi-calendar me-1"></i>
+                                            @startDate.ToString("MMM dd, yyyy") - @endDate.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(training.Description))
+                                    {
+                                        <div class="mt-2">
+                                            <small class="text-muted">@(training.Description.Length > 100 ? training.Description.Substring(0, 100) + "..." : training.Description)</small>
+                                        </div>
+                                    }
+
+                                    <!-- Enhanced Certificate Information -->
+                                    @if (hasCertificate)
+                                    {
+                                        <div class="mt-3 p-2 bg-light rounded">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong class="text-success">
+                                                        <i class="bi bi-file-earmark-check me-1"></i>Certificate Available
+                                                    </strong>
+                                                    @if (!string.IsNullOrEmpty(training.CertificateFileName))
+                                                    {
+                                                        <div class="small text-muted">@training.CertificateFileName</div>
+                                                    }
+                                                </div>
+                                                <div class="btn-group">
+                                                    @if (!string.IsNullOrEmpty(training.CertificatePdfUrl))
+                                                    {
+                                                        <a href="@Url.Action("ViewTrainingCertificate", new { employeeId = Model.Id, trainingId = training.Id })" target="_blank" class="btn btn-sm btn-success">
+                                                            <i class="bi bi-file-pdf me-1"></i>PDF
+                                                        </a>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(training.CertificateUrl))
+                                                    {
+                                                        <a href="@training.CertificateUrl" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-eye me-1"></i>View
+                                                        </a>
+                                                    }
+                                                    <a href="@Url.Action("TrainingDetails", "Training", new { employeeId = Model.Id, trainingId = training.Id })"
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="bi bi-three-dots"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (training.Status == "Completed")
+                                    {
+                                        <div class="mt-2 alert alert-warning py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small>
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    <strong>Certificate Pending</strong>
+                                                </small>
+                                                <a href="@Url.Action("UploadCertificate", "Training", new { employeeId = Model.Id, trainingId = training.Id })"
+                                                   class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-upload me-1"></i>Upload
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2">No trainings added yet</p>
+                                <a href="@Url.Action("CreateTraining", "Training", new { employeeId = Model.Id })" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus me-1"></i>Add First Training
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div class="tab-pane fade" id="documents" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-files me-2"></i>Employee Documents
+                        </h5>
+                        <a href="@Url.Action("EmployeeDocuments", new { id = Model.Id })" class="btn btn-primary btn-sm">
+                            <i class="bi bi-folder me-1"></i>View All Documents
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Quick Document Stats -->
+                            <div class="col-md-3 mb-4">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-folder2-open display-4"></i>
+                                        <h4 class="mt-2">@(Model.Qualifications?.Count(q => q.HasDocuments) ?? 0)</h4>
+                                        <p class="mb-0">Qualification Documents</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-file-earmark-pdf display-4"></i>
+                                        <h4 class="mt-2">@(Model.Trainings?.Count(t => !string.IsNullOrEmpty(t.CertificatePdfUrl)) ?? 0)</h4>
+                                        <p class="mb-0">Training Certificates</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-file-text display-4"></i>
+                                        <h4 class="mt-2">@(Model.Qualifications?.Count(q => !string.IsNullOrEmpty(q.TranscriptPdfUrl)) ?? 0)</h4>
+                                        <p class="mb-0">Transcripts</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-cloud-arrow-up display-4"></i>
+                                        <h4 class="mt-2">Upload</h4>
+                                        <p class="mb-0">Add New Documents</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Documents -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5>Recent Documents</h5>
+                                <div class="list-group">
+                                    @{
+                                        var recentDocs = new List<dynamic>();
+
+                                        // Add qualification documents
+                                        if (Model.Qualifications != null)
+                                        {
+                                            foreach (var qual in Model.Qualifications.Where(q => q.HasDocuments))
+                                            {
+                                                if (!string.IsNullOrEmpty(qual.CertificatePdfUrl))
+                                                {
+                                                    recentDocs.Add(new
+                                                    {
+                                                        Type = "Qualification Certificate",
+                                                        Name = qual.CertificateFileName ?? $"{qual.Degree}_Certificate.pdf",
+                                                        Qualification = qual,
+                                                        Url = qual.CertificatePdfUrl,
+                                                        Date = qual.CreatedAt != null ? qual.CreatedAt.ToDateTime() : DateTime.Now
+                                                    });
+                                                }
+                                                if (!string.IsNullOrEmpty(qual.TranscriptPdfUrl))
+                                                {
+                                                    recentDocs.Add(new
+                                                    {
+                                                        Type = "Transcript",
+                                                        Name = qual.TranscriptFileName ?? $"{qual.Degree}_Transcript.pdf",
+                                                        Qualification = qual,
+                                                        Url = qual.TranscriptPdfUrl,
+                                                        Date = qual.CreatedAt != null ? qual.CreatedAt.ToDateTime() : DateTime.Now
+                                                    });
+                                                }
+                                            }
+                                        }
+
+                                        // Add training certificates
+                                        if (Model.Trainings != null)
+                                        {
+                                            foreach (var training in Model.Trainings.Where(t => !string.IsNullOrEmpty(t.CertificatePdfUrl)))
+                                            {
+                                                recentDocs.Add(new
+                                                {
+                                                    Type = "Training Certificate",
+                                                    Name = training.CertificateFileName ?? $"{training.Title}_Certificate.pdf",
+                                                    Training = training,
+                                                    Url = training.CertificatePdfUrl,
+                                                    Date = training.CreatedAt != null ? training.CreatedAt.ToDateTime() : DateTime.Now
+                                                });
+                                            }
+                                        }
+
+                                        // Display recent documents (latest 5)
+                                        foreach (var doc in recentDocs.OrderByDescending(d => d.Date).Take(5))
+                                        {
+                                            <div class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1">@doc.Name</h6>
+                                                        <p class="mb-1 text-muted">@doc.Type</p>
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-calendar me-1"></i>
+                                                            @doc.Date.ToString("MMM dd, yyyy")
+                                                        </small>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        <a href="@doc.Url" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye me-1"></i>View
+                                                        </a>
+                                                        <a href="@doc.Url" download class="btn btn-sm btn-outline-success">
+                                                            <i class="bi bi-download me-1"></i>Download
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (!recentDocs.Any())
+                                    {
+                                        <div class="text-center py-4">
+                                            <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                                            <p class="text-muted mt-2">No documents found</p>
+                                            <p class="text-muted small">Upload qualification certificates or training documents to see them here.</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5>Quick Actions</h5>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <a href="@Url.Action("EmployeeDocuments", new { id = Model.Id })" class="btn btn-outline-primary">
+                                        <i class="bi bi-folder me-1"></i>Browse All Documents
+                                    </a>
+                                    <a href="@Url.Action("UploadQualificationDocument", new { employeeId = Model.Id })" class="btn btn-outline-success">
+                                        <i class="bi bi-upload me-1"></i>Upload Qualification Docs
+                                    </a>
+                                    <a href="@Url.Action("CreateTraining", "Training", new { employeeId = Model.Id })" class="btn btn-outline-info">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Training with Certificate
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle me-2" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h5 class="alert-heading">Employee Not Found</h5>
+                    <p class="mb-0">The requested employee could not be found. Please check the employee ID and try again.</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@functions {
+    public string GetSkillLevelClass(string level)
+    {
+        if (string.IsNullOrEmpty(level)) return "bg-secondary";
+
+        var levelNum = ParseSkillLevel(level);
+        return levelNum switch
+        {
+            1 => "bg-danger",
+            2 => "bg-warning text-dark",
+            3 => "bg-info",
+            4 => "bg-primary",
+            5 => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetDepartmentBadgeClass(string department)
+    {
+        return department?.ToLower() switch
+        {
+            "budget analysis" => "bg-primary",
+            "risk management" => "bg-success",
+            "compliance" => "bg-warning text-dark",
+            "data analysis" => "bg-info",
+            "financial planning" => "bg-purple",
+            "audit" => "bg-danger",
+            "treasury operations" => "bg-dark",
+            "engineering" => "bg-info",
+            "marketing" => "bg-success",
+            "sales" => "bg-primary",
+            "human resources" => "bg-warning text-dark",
+            "operations" => "bg-purple",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetTrainingStatusBadge(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "completed" => "bg-success",
+            "in progress" => "bg-warning text-dark",
+            "not started" => "bg-secondary",
+            "cancelled" => "bg-danger",
+            "assigned" => "bg-info",
+            "pending" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private int ParseSkillLevel(string level)
+    {
+        if (int.TryParse(level, out int result))
+            return result;
+
+        return level?.ToLower() switch
+        {
+            "beginner" => 1,
+            "basic" => 2,
+            "intermediate" => 3,
+            "advanced" => 4,
+            "expert" => 5,
+            _ => 0
+        };
+    }
+}
+
+<style>
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+
+    .metric-item {
+        padding: 10px;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .border-rounded {
+        border: 1px solid #e9ecef;
+        border-radius: 0.375rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .border-rounded:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+
+    a.text-purple:hover {
+        color: #5a32a3 !important;
+    }
+
+    /* Certificate specific styles */
+    .certificate-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+    }
+
+    .certificate-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745 !important;
+    }
+
+        .certificate-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.15);
+        }
+
+    .pending-certificate {
+        border-left: 4px solid #ffc107 !important;
+        background-color: #fffbf0;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Activate tabs
+            const triggerTabList = [].slice.call(document.querySelectorAll('#employeeTabs button'));
+            triggerTabList.forEach(function (triggerEl) {
+                const tabTrigger = new bootstrap.Tab(triggerEl);
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    tabTrigger.show();
+                });
+            });
+
+            // Handle tab persistence
+            const activeTab = localStorage.getItem('activeEmployeeTab');
+            if (activeTab) {
+                const tab = new bootstrap.Tab(document.querySelector(activeTab));
+                tab.show();
+            }
+
+            // Store active tab
+            const tabEl = document.querySelector('button[data-bs-toggle="tab"]');
+            if (tabEl) {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem('activeEmployeeTab', event.target.getAttribute('data-bs-target'));
+                });
+            }
+
+            // Add smooth animations for certificate cards
+            const certificateCards = document.querySelectorAll('.card');
+            certificateCards.forEach(card => {
+                card.style.transition = 'all 0.3s ease';
+            });
+        });
+    </script>
+}

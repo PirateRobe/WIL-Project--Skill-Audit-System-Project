@@ -1,0 +1,445 @@
+﻿@model WebApplication2.Models.Admin
+
+@{
+    ViewData["Title"] = "My Profile";
+    ViewData["Subtitle"] = "Manage your account information and preferences";
+
+    // Use the helper methods from the model
+    var initials = Model.GetInitials();
+    var displayName = Model.GetDisplayName();
+    var createdAt = Model.GetCreatedAt();
+    var lastLogin = Model.GetLastLogin();
+    var updatedAt = Model.GetUpdatedAt();
+
+    // Calculate account age
+    var accountAge = "";
+    if (createdAt.HasValue)
+    {
+        var age = DateTime.UtcNow - createdAt.Value;
+        var days = age.Days;
+        var months = days / 30;
+        var years = months / 12;
+
+        if (years > 0)
+        {
+            accountAge = $"{years} year{(years > 1 ? "s" : "")}";
+        }
+        else if (months > 0)
+        {
+            accountAge = $"{months} month{(months > 1 ? "s" : "")}";
+        }
+        else
+        {
+            accountAge = $"{days} day{(days > 1 ? "s" : "")}";
+        }
+    }
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">@ViewData["Title"]</h1>
+                <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+            </div>
+            <div>
+                <a href="@Url.Action("Edit", "Profile")" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-1"></i>Edit Profile
+                </a>
+                <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-4 col-md-6">
+        <!-- Profile Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-circle me-2"></i>Profile Information
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 100px; height: 100px;">
+                        <span class="text-white fw-bold fs-2">@initials</span>
+                    </div>
+                </div>
+                <h4 class="mb-1">@displayName</h4>
+                <p class="text-muted mb-3">@Model.Email</p>
+                <div class="mb-3">
+                    <span class="badge bg-success fs-6">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Administrator
+                    </span>
+                </div>
+                <div class="small text-muted">
+                    <i class="fas fa-circle me-1 text-success"></i>
+                    Active Account
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Edit", "Profile")" class="btn btn-outline-primary text-start">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    <a href="@Url.Action("ChangePassword", "Profile")" class="btn btn-outline-secondary text-start">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </a>
+                    <button type="button" class="btn btn-outline-info text-start" onclick="updateLastLogin()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8 col-md-6">
+        <!-- Account Details Card -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Account Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold text-muted" style="width: 40%;">First Name:</td>
+                                        <td>@(string.IsNullOrEmpty(Model.FirstName) ? "Not set" : Model.FirstName)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">Last Name:</td>
+                                        <td>@(string.IsNullOrEmpty(Model.LastName) ? "Not set" : Model.LastName)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">Email:</td>
+                                        <td>
+                                            <a href="mailto:@Model.Email" class="text-decoration-none">
+                                                <i class="fas fa-envelope me-1 text-primary"></i>@Model.Email
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">User ID:</td>
+                                        <td>
+                                            <small class="text-muted font-monospace">@(string.IsNullOrEmpty(Model.UserId) ? "Not available" : Model.UserId)</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold text-muted" style="width: 40%;">Role:</td>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-shield-alt me-1"></i>
+                                                @(Model.Role ?? "admin")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">Last Login:</td>
+                                        <td>
+                                            <i class="fas fa-clock me-1 text-muted"></i>
+                                            @if (lastLogin.HasValue)
+                                            {
+                                                <span title="@lastLogin.Value.ToString("yyyy-MM-dd HH:mm:ss") UTC">
+                                                    @lastLogin.Value.ToString("MMM dd, yyyy HH:mm")
+                                                </span>
+                                                @if (lastLogin.Value > DateTime.UtcNow.AddMinutes(-5))
+                                                {
+                                                    <span class="badge bg-success ms-1">Recent</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Never</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">Last Updated:</td>
+                                        <td>
+                                            <i class="fas fa-edit me-1 text-muted"></i>
+                                            @if (updatedAt.HasValue)
+                                            {
+                                                <span title="@updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss") UTC">
+                                                    @updatedAt.Value.ToString("MMM dd, yyyy HH:mm")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Never</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-muted">Member Since:</td>
+                                        <td>
+                                            <i class="fas fa-calendar me-1 text-muted"></i>
+                                            @if (createdAt.HasValue)
+                                            {
+                                                @createdAt.Value.ToString("MMM dd, yyyy")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Unknown</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timestamp Details -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="border-top pt-3">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-history me-2"></i>Account Timeline
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <div class="border rounded p-3 h-100">
+                                        <i class="fas fa-user-clock text-primary fs-2 mb-2"></i>
+                                        <h6>Account Age</h6>
+                                        <small class="fw-bold d-block mt-2">
+                                            @if (!string.IsNullOrEmpty(accountAge))
+                                            {
+                                                @accountAge
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Unknown</span>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="border rounded p-3 h-100">
+                                        <i class="fas fa-sign-in-alt text-success fs-2 mb-2"></i>
+                                        <h6>Last Activity</h6>
+                                        <small class="fw-bold d-block mt-2">
+                                            @if (lastLogin.HasValue)
+                                            {
+                                                if (lastLogin.Value > DateTime.UtcNow.AddHours(-1))
+                                                {
+                                                    <span class="text-success">Just now</span>
+                                                }
+                                                else if (lastLogin.Value > DateTime.UtcNow.AddDays(-1))
+                                                {
+                                                    <span>Today</span>
+                                                }
+                                                else
+                                                {
+                                                    @lastLogin.Value.ToString("MMM dd")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No activity</span>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="border rounded p-3 h-100">
+                                        <i class="fas fa-sync-alt text-info fs-2 mb-2"></i>
+                                        <h6>Last Update</h6>
+                                        <small class="fw-bold d-block mt-2">
+                                            @if (updatedAt.HasValue)
+                                            {
+                                                if (updatedAt.Value > DateTime.UtcNow.AddHours(-1))
+                                                {
+                                                    <span class="text-info">Recently</span>
+                                                }
+                                                else
+                                                {
+                                                    @updatedAt.Value.ToString("MMM dd")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Never</span>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateLastLogin() {
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            button.disabled = true;
+
+            fetch('@Url.Action("UpdateLastLogin", "Profile")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('Session refreshed successfully!', 'success');
+                    // Reload the page after a short delay to show updated timestamp
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Failed to refresh session: ' + (data.message || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred while refreshing session.', 'error');
+            })
+            .finally(() => {
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function showToast(message, type) {
+            // Remove existing toasts
+            document.querySelectorAll('.custom-toast').forEach(toast => toast.remove());
+
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show custom-toast position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    const bsAlert = new bootstrap.Alert(toast);
+                    bsAlert.close();
+                }
+            }, 4000);
+        }
+
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert:not(.custom-toast)');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
+
+            // Add tooltips for timestamp details
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+
+    <style>
+        .card {
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+            }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+        }
+
+        .table-borderless td {
+            border: none;
+            padding: 0.75rem 0.5rem;
+            vertical-align: middle;
+        }
+
+        .font-monospace {
+            font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+            font-size: 0.85em;
+        }
+
+        .border-rounded {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .border-rounded:hover {
+                border-color: #007bff;
+                box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+            }
+    </style>
+}

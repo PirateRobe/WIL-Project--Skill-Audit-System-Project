@@ -1,0 +1,510 @@
+﻿@model List<WebApplication2.Models.TrainingProgram>
+
+@{
+    ViewData["Title"] = "Training Programs Library";
+    ViewData["Subtitle"] = "Browse and manage all training programs";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <div>
+        <a asp-action="CreateProgram" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Create New Program
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Overview
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Programs</div>
+                        <div class="h5 mb-0">@Model.Count</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-collection-play fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Active Programs</div>
+                        <div class="h5 mb-0">@Model.Count(p => p.IsActive)</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* <div class="col-xl-3 col-md-6">
+        <div class="card bg-info text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Assignments</div>
+                        <div class="h5 mb-0">@Model.Sum(p => p.AssignmentCount)</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+    @* <div class="col-xl-3 col-md-6">
+        <div class="card bg-warning text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Completed</div>
+                        <div class="h5 mb-0">@Model.Sum(p => p.CompletedCount)</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-award fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-collection-play me-2"></i>Training Programs
+            </h5>
+            <div class="d-flex gap-2">
+                <div class="input-group input-group-sm" style="width: 250px;">
+                    <input type="text" id="searchPrograms" class="form-control" placeholder="Search programs...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-filter me-1"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item filter-option" data-filter="all" href="#">All Programs</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="active" href="#">Active Only</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="inactive" href="#">Inactive Only</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item filter-option" data-filter="technical" href="#">Technical</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="soft-skills" href="#">Soft Skills</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="compliance" href="#">Compliance</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover" id="programsTable">
+                    <thead>
+                        <tr>
+                            <th>Program Title</th>
+                            <th>Category</th>
+                            <th>Provider</th>
+                            <th>Duration</th>
+                            <th>Difficulty</th>
+                            <th>Assignments</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var program in Model)
+                        {
+                            <tr class="program-row" data-category="@program.Category?.ToLower().Replace(" ", "-")" data-status="@(program.IsActive ? "active" : "inactive")">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-play-circle text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-1">@program.Title</h6>
+                                            <small class="text-muted">@(program.Description.Length > 100 ? program.Description.Substring(0, 100) + "..." : program.Description)</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@program.Category</span>
+                                </td>
+                                <td>@program.Provider</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        <i class="bi bi-clock me-1"></i>@program.Duration hrs
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (program.DifficultyLevel == "Beginner")
+                                    {
+                                        <span class="badge bg-success">@program.DifficultyLevel</span>
+                                    }
+                                    else if (program.DifficultyLevel == "Intermediate")
+                                    {
+                                        <span class="badge bg-warning">@program.DifficultyLevel</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">@program.DifficultyLevel</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px; width: 80px;">
+                                            @{
+                                                var completionRate = program.AssignmentCount > 0 ? (program.CompletedCount * 100) / program.AssignmentCount : 0;
+                                            }
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: @completionRate%;"
+                                                 aria-valuenow="@completionRate" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small class="text-muted">@program.CompletedCount/@program.AssignmentCount</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (program.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-pause-circle me-1"></i>Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="ProgramDetails" asp-route-id="@program.Id" class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="EditProgram" asp-route-id="@program.Id" class="btn btn-outline-secondary" title="Edit Program">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-program" data-program-id="@program.Id" data-program-title="@program.Title" title="Delete Program">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-collection-play text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="text-muted">No Training Programs Found</h4>
+                <p class="text-muted mb-4">Get started by creating your first training program.</p>
+                <a asp-action="CreateProgram" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Create Your First Program
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Program Cards View (Alternative Layout) -->
+<div class="row mt-4 d-none" id="programsCardView">
+    @foreach (var program in Model)
+    {
+        <div class="col-xl-4 col-lg-6 mb-4 program-card" data-category="@program.Category?.ToLower().Replace(" ", "-")" data-status="@(program.IsActive ? "active" : "inactive")">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-secondary">@program.Category</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" asp-action="ProgramDetails" asp-route-id="@program.Id"><i class="bi bi-eye me-2"></i>View Details</a></li>
+                            <li><a class="dropdown-item" asp-action="EditProgram" asp-route-id="@program.Id"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger delete-program" href="#" data-program-id="@program.Id" data-program-title="@program.Title"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">@program.Title</h5>
+                    <p class="card-text text-muted small">@program.Description</p>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Provider:</small>
+                        <div class="fw-semibold">@program.Provider</div>
+                    </div>
+
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="h6 mb-0">@program.Duration</div>
+                                <small class="text-muted">Hours</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="h6 mb-0">@program.AssignmentCount</div>
+                                <small class="text-muted">Assigned</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 mb-0">@program.CompletedCount</div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Difficulty:</small>
+                        @if (program.DifficultyLevel == "Beginner")
+                        {
+                            <span class="badge bg-success">@program.DifficultyLevel</span>
+                        }
+                        else if (program.DifficultyLevel == "Intermediate")
+                        {
+                            <span class="badge bg-warning">@program.DifficultyLevel</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">@program.DifficultyLevel</span>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Skills Covered:</small>
+                        <div class="mt-1">
+                            @foreach (var skill in program.CoveredSkills.Take(3))
+                            {
+                                <span class="badge bg-light text-dark me-1 mb-1">@skill</span>
+                            }
+                            @if (program.CoveredSkills.Count > 3)
+                            {
+                                <span class="badge bg-light text-dark">+@(program.CoveredSkills.Count - 3) more</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            @if (program.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-pause-circle me-1"></i>Inactive
+                                </span>
+                            }
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>
+                            @program.CreatedAt.ToDateTime().ToString("MMM dd, yyyy")
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Training Program</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the program "<strong id="programTitleToDelete"></strong>"?</p>
+                <p class="text-danger small mb-0">This action cannot be undone. Any assignments linked to this program will also be affected.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete Program</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            const searchInput = document.getElementById('searchPrograms');
+            const programRows = document.querySelectorAll('.program-row, .program-card');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                programRows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Filter functionality
+            const filterOptions = document.querySelectorAll('.filter-option');
+
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const filter = this.getAttribute('data-filter');
+
+                    programRows.forEach(row => {
+                        if (filter === 'all') {
+                            row.style.display = '';
+                        } else if (filter === 'active') {
+                            row.style.display = row.getAttribute('data-status') === 'active' ? '' : 'none';
+                        } else if (filter === 'inactive') {
+                            row.style.display = row.getAttribute('data-status') === 'inactive' ? '' : 'none';
+                        } else {
+                            // Category filter
+                            row.style.display = row.getAttribute('data-category') === filter ? '' : 'none';
+                        }
+                    });
+                });
+            });
+
+            // Delete program functionality
+            const deleteButtons = document.querySelectorAll('.delete-program');
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            const deleteForm = document.getElementById('deleteForm');
+            const programTitleToDelete = document.getElementById('programTitleToDelete');
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const programId = this.getAttribute('data-program-id');
+                    const programTitle = this.getAttribute('data-program-title');
+
+                    programTitleToDelete.textContent = programTitle;
+                    deleteForm.action = '@Url.Action("DeleteProgram", "Training")' + '?id=' + programId;
+                    deleteModal.show();
+                });
+            });
+
+            // View toggle functionality
+            const viewToggle = document.createElement('div');
+            viewToggle.className = 'btn-group btn-group-sm ms-2';
+            viewToggle.innerHTML = `
+                <button type="button" class="btn btn-outline-secondary active" id="tableViewBtn" title="Table View">
+                    <i class="bi bi-list"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="cardViewBtn" title="Card View">
+                    <i class="bi bi-grid"></i>
+                </button>
+            `;
+
+            document.querySelector('.card-header .d-flex').appendChild(viewToggle);
+
+            const tableViewBtn = document.getElementById('tableViewBtn');
+            const cardViewBtn = document.getElementById('cardViewBtn');
+            const programsTable = document.querySelector('.table-responsive');
+            const programsCardView = document.getElementById('programsCardView');
+
+            tableViewBtn.addEventListener('click', function() {
+                this.classList.add('active');
+                cardViewBtn.classList.remove('active');
+                programsTable.classList.remove('d-none');
+                programsCardView.classList.add('d-none');
+            });
+
+            cardViewBtn.addEventListener('click', function() {
+                this.classList.add('active');
+                tableViewBtn.classList.remove('active');
+                programsTable.classList.add('d-none');
+                programsCardView.classList.remove('d-none');
+            });
+
+            // Add hover effects
+            programRows.forEach(row => {
+                row.style.transition = 'all 0.2s ease';
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                });
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                    this.style.boxShadow = '';
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .program-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+        .progress {
+            background-color: #e9ecef;
+        }
+
+        .bg-primary {
+            background-color: #0d6efd !important;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+}

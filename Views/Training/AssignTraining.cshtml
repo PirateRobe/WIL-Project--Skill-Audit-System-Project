@@ -1,0 +1,196 @@
+﻿@{
+    ViewData["Title"] = "Assign Training";
+    ViewData["Subtitle"] = "Assign training programs to employees";
+
+    // Convert ViewBag to strongly typed lists
+    var trainingPrograms = ViewBag.TrainingPrograms as List<WebApplication2.Models.TrainingProgram> ?? new List<WebApplication2.Models.TrainingProgram>();
+    var employees = ViewBag.Employees as List<WebApplication2.Models.Employee> ?? new List<WebApplication2.Models.Employee>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Overview
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-plus me-2"></i>Assign Training Program
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="AssignTraining" method="post" id="assignTrainingForm">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Training Program *</label>
+                                <select class="form-select" name="trainingProgramId" id="trainingProgramId" required>
+                                    <option value="">Select Training Program</option>
+                                    @foreach (var program in ViewBag.TrainingPrograms)
+                                    {
+                                        <option value="@program.Id">@program.Title - @program.Provider</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Employee *</label>
+                                <select class="form-select" name="employeeId" id="employeeId" required>
+                                    <option value="">Select Employee</option>
+                                    @foreach (var employee in ViewBag.Employees)
+                                    {
+                                        <option value="@employee.Id">@employee.FirstName @employee.LastName - @employee.Department</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Due Date *</label>
+                                <input type="date" class="form-control" name="dueDate" id="dueDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Reason for Assignment</label>
+                                <input type="text" class="form-control" name="reason" id="reason"
+                                       placeholder="Enter reason for this training assignment">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>Assign Training
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Quick Stats
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Available Programs</small>
+                    <div class="h5">@trainingPrograms.Count</div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Total Employees</small>
+                    <div class="h5">@employees.Count</div>
+                </div>
+                <div>
+                    <small class="text-muted">Active Assignments</small>
+                    <div class="h5">@(ViewBag.ActiveAssignments ?? 0)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Programs -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Recent Programs
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (trainingPrograms.Any())
+                {
+                    foreach (var program in trainingPrograms.Take(3))
+                    {
+                        <div class="mb-3 pb-2 border-bottom">
+                            <h6 class="small fw-bold mb-1">@program.Title</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">@program.Provider</small>
+                                <span class="badge bg-secondary">@program.Duration hrs</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small">No training programs available.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const programSelect = document.getElementById('trainingProgramId');
+            const skillsPreview = document.getElementById('skillsPreview');
+
+            // Update skills preview when program selection changes
+            programSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const skills = selectedOption.getAttribute('data-skills');
+
+                if (skills && skills.length > 0) {
+                    const skillsArray = skills.split(',');
+                    skillsPreview.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            ${skillsArray.map(skill => `<span class="badge bg-primary">${skill}</span>`).join('')}
+                        </div>
+                    `;
+                } else {
+                    skillsPreview.innerHTML = '<p class="text-muted mb-0">No skills specified for this program.</p>';
+                }
+            });
+
+            // Form validation
+            const form = document.getElementById('assignTrainingForm');
+            form.addEventListener('submit', function(e) {
+                const programId = document.getElementById('trainingProgramId').value;
+                const employeeId = document.getElementById('employeeId').value;
+                const dueDate = document.getElementById('dueDate').value;
+
+                if (!programId || !employeeId || !dueDate) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Check if due date is in the future
+                const selectedDate = new Date(dueDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (selectedDate < today) {
+                    e.preventDefault();
+                    alert('Due date must be in the future.');
+                    return;
+                }
+            });
+
+            // Set minimum due date to today
+            const dueDateInput = document.getElementById('dueDate');
+            const today = new Date().toISOString().split('T')[0];
+            dueDateInput.min = today;
+        });
+    </script>
+}

@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Report Generated Successfully";
+    ViewData["Subtitle"] = "Your report has been downloaded";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i>Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-check-circle me-2"></i>Report Generation Complete
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="bi bi-file-earmark-check display-1 text-success"></i>
+                        <h3 class="text-success mt-3">Report Downloaded Successfully!</h3>
+                        <p class="text-muted">Your PDF report has been generated and downloaded to your device.</p>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-download display-4 text-primary"></i>
+                                        <h5>Check Your Downloads</h5>
+                                        <p class="text-muted small">The PDF file should be in your downloads folder</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-plus-circle display-4 text-info"></i>
+                                        <h5>Generate Another</h5>
+                                        <p class="text-muted small">Create a new report with different parameters</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
+                                <i class="bi bi-plus-circle me-1"></i>Create New Report
+                            </a>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                <i class="bi bi-list-ul me-1"></i>View All Options
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Tips -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>What's Next?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Review the report</strong> - Check the downloaded PDF file
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Share findings</strong> - Discuss insights with your team
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Generate follow-up reports</strong> - Create more specific analyses
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Track progress</strong> - Generate the same report periodically to track changes
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Support Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-question-circle me-2"></i>Need Help?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-book me-1"></i>View Documentation
+                        </a>
+                        <a href="#" class="btn btn-outline-info">
+                            <i class="bi bi-envelope me-1"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

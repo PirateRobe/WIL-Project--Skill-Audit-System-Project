@@ -1,0 +1,148 @@
+﻿@{
+    ViewData["Title"] = "Reports";
+    ViewData["Subtitle"] = "Generate and download training reports";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
+                <i class="bi bi-plus-circle me-1"></i>Generate Report
+            </a>
+            <a href="@Url.Action("Dashboard")" class="btn btn-outline-secondary">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Quick Reports
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100 quick-report-btn" data-type="SkillsAndTraining">
+                                <i class="bi bi-tools me-2"></i>Skills & Training
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-success w-100 quick-report-btn" data-type="DepartmentPerformance">
+                                <i class="bi bi-building me-2"></i>Department Performance
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-info w-100 quick-report-btn" data-type="SkillGapAnalysis">
+                                <i class="bi bi-graph-up me-2"></i>Skill Gap Analysis
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-warning w-100 quick-report-btn" data-type="TrainingCompletion">
+                                <i class="bi bi-check-circle me-2"></i>Training Completion
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Card -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-info-circle me-2"></i>About Reports
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-4">
+                <i class="bi bi-file-earmark-pdf display-1 text-primary"></i>
+                <h4 class="text-primary mt-3">On-Demand PDF Reports</h4>
+                <p class="text-muted">Generate professional PDF reports instantly. All reports are generated on-demand and downloaded directly to your device.</p>
+
+                <div class="row mt-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-lightning-fill text-warning h3"></i>
+                            <h5>Instant Generation</h5>
+                            <p class="text-muted small">Reports are generated in real-time with current data</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-download text-success h3"></i>
+                            <h5>Direct Download</h5>
+                            <p class="text-muted small">PDF files download immediately to your device</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-shield-check text-info h3"></i>
+                            <h5>No Storage</h5>
+                            <p class="text-muted small">Reports are not stored - generate fresh copies anytime</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="@Url.Action("Create")" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>Create Custom Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Quick report generation
+            document.querySelectorAll('.quick-report-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const reportType = this.getAttribute('data-type');
+                    generateQuickReport(reportType);
+                });
+            });
+
+            function generateQuickReport(reportType) {
+                const btn = document.querySelector(`.quick-report-btn[data-type="${reportType}"]`);
+                const originalText = btn.innerHTML;
+
+                btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+                btn.disabled = true;
+
+                // Submit form to generate quick report
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("GenerateQuickReport")';
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+
+                const reportTypeInput = document.createElement('input');
+                reportTypeInput.type = 'hidden';
+                reportTypeInput.name = 'reportType';
+                reportTypeInput.value = reportType;
+                form.appendChild(reportTypeInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    </script>
+}

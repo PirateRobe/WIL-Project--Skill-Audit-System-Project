@@ -1,0 +1,338 @@
+﻿@model WebApplication2.Models.ReportRequest
+
+@{
+    ViewData["Title"] = "Generate Report";
+    ViewData["Subtitle"] = "Create a new training report";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>Report Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" id="reportForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Remove problematic hidden fields that are causing validation errors -->
+                        <input type="hidden" asp-for="Id" />
+
+                        <!-- Report Type -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="ReportType" class="form-label">Report Type *</label>
+                                <select asp-for="ReportType" class="form-select" required>
+                                    <option value="">Select Report Type</option>
+                                    <option value="SkillsAndTraining">Skills & Training Overview</option>
+                                    <option value="DepartmentPerformance">Department Performance</option>
+                                    <option value="SkillGapAnalysis">Skill Gap Analysis</option>
+                                    <option value="TrainingCompletion">Training Completion Report</option>
+                                    <option value="EmployeeDevelopment">Employee Development</option>
+                                    <option value="Compliance">Compliance Report</option>
+                                </select>
+                                <span asp-validation-for="ReportType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Format" class="form-label">Output Format *</label>
+                                <select asp-for="Format" class="form-select" required>
+                                    <option value="">Select Format</option>
+                                    <option value="PDF">PDF Document</option>
+                                    <option value="WORD">Word Document</option>
+                                </select>
+                                <span asp-validation-for="Format" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Report Details -->
+                        <div class="mb-4">
+                            <label asp-for="Title" class="form-label">Report Title *</label>
+                            <input asp-for="Title" class="form-control" placeholder="Enter a descriptive title for your report" required />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">Report Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Describe the purpose and content of this report..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Filters Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2"></i>Filters (Optional)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Department</label>
+                                        <select class="form-select" name="DepartmentFilter">
+                                            <option value="">All Departments</option>
+                                            @if (ViewBag.Departments != null)
+                                            {
+                                                foreach (var dept in ViewBag.Departments)
+                                                {
+                                                    <option value="@dept">@dept</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Date Range</label>
+                                        <select class="form-select" name="DateRange">
+                                            <option value="all">All Time</option>
+                                            <option value="last7">Last 7 Days</option>
+                                            <option value="last30">Last 30 Days</option>
+                                            <option value="last90">Last 90 Days</option>
+                                            <option value="thisYear">This Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Training Status</label>
+                                        <select class="form-select" name="TrainingStatus">
+                                            <option value="">All Statuses</option>
+                                            <option value="Completed">Completed</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="Pending">Pending</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Skill Level</label>
+                                        <select class="form-select" name="SkillLevel">
+                                            <option value="">All Levels</option>
+                                            <option value="Beginner">Beginner (1-2)</option>
+                                            <option value="Intermediate">Intermediate (3)</option>
+                                            <option value="Advanced">Advanced (4-5)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Report Options -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-sliders me-2"></i>Report Options
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="IncludeCharts" checked>
+                                            <label class="form-check-label">Include Charts & Graphs</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="IncludeRecommendations" checked>
+                                            <label class="form-check-label">Include Recommendations</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="IncludeExecutiveSummary" checked>
+                                            <label class="form-check-label">Include Executive Summary</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="IncludeDetailedData">
+                                            <label class="form-check-label">Include Detailed Data Tables</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="generateBtn">
+                                <i class="bi bi-gear-wide-connected me-1"></i>Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar - Report Preview -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-eye me-2"></i>Report Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-file-text display-4 text-muted"></i>
+                            <h6 class="mt-2">Report Preview</h6>
+                            <p class="text-muted small">Configure your report settings to see preview</p>
+                        </div>
+
+                        <div class="preview-section mb-3">
+                            <strong class="d-block text-primary" id="previewTitle">Report Title</strong>
+                            <small class="text-muted" id="previewDescription">Report description will appear here</small>
+                        </div>
+
+                        <div class="preview-details">
+                            <div class="row g-2 small">
+                                <div class="col-6">
+                                    <span class="text-muted">Type:</span>
+                                    <span class="d-block" id="previewType">-</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">Format:</span>
+                                    <span class="d-block" id="previewFormat">-</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">Includes:</span>
+                                    <span class="d-block" id="previewIncludes">-</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">Filters:</span>
+                                    <span class="d-block" id="previewFilters">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Report will include data from all employees and training records
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>Quick Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Use descriptive titles for easy identification
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            PDF format is recommended for printing
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Apply filters to focus on specific data subsets
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Include recommendations for actionable insights
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update preview in real-time
+            const titleInput = document.getElementById('Title');
+            const descriptionInput = document.getElementById('Description');
+            const typeSelect = document.getElementById('ReportType');
+            const formatSelect = document.getElementById('Format');
+
+            function updatePreview() {
+                // Update basic info
+                document.getElementById('previewTitle').textContent = titleInput.value || 'Report Title';
+                document.getElementById('previewDescription').textContent = descriptionInput.value || 'Report description will appear here';
+                document.getElementById('previewType').textContent = typeSelect.value || '-';
+                document.getElementById('previewFormat').textContent = formatSelect.value || '-';
+
+                // Update includes
+                const includes = [];
+                if (document.querySelector('input[name="IncludeCharts"]').checked) includes.push('Charts');
+                if (document.querySelector('input[name="IncludeRecommendations"]').checked) includes.push('Recommendations');
+                if (document.querySelector('input[name="IncludeExecutiveSummary"]').checked) includes.push('Executive Summary');
+                document.getElementById('previewIncludes').textContent = includes.join(', ') || 'None';
+
+                // Update filters
+                const filters = [];
+                const deptFilter = document.querySelector('select[name="DepartmentFilter"]').value;
+                const dateFilter = document.querySelector('select[name="DateRange"]').value;
+                if (deptFilter) filters.push(deptFilter);
+                if (dateFilter && dateFilter !== 'all') filters.push(dateFilter);
+                document.getElementById('previewFilters').textContent = filters.join(', ') || 'None';
+            }
+
+            // Add event listeners for real-time preview
+            [titleInput, descriptionInput, typeSelect, formatSelect].forEach(element => {
+                element.addEventListener('input', updatePreview);
+                element.addEventListener('change', updatePreview);
+            });
+
+            // Add event listeners for checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updatePreview);
+            });
+
+            // Add event listeners for filter selects
+            document.querySelectorAll('select[name="DepartmentFilter"], select[name="DateRange"]').forEach(select => {
+                select.addEventListener('change', updatePreview);
+            });
+
+            // Form submission
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating Report...';
+
+                // Show loading state
+                const preview = document.querySelector('.report-preview');
+                preview.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h6 class="text-primary">Generating Report...</h6>
+                        <p class="text-muted small">Please wait while we generate your PDF report</p>
+                    </div>
+                `;
+            });
+
+            // Initial preview update
+            updatePreview();
+        });
+    </script>
+}

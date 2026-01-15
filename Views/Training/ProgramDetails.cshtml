@@ -1,0 +1,204 @@
+﻿@model WebApplication2.Models.TrainingProgram
+
+@{
+    // Add null check at the beginning
+    if (Model == null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Program Not Found</h4>
+            <p>The requested training program could not be found.</p>
+            <hr>
+            <a asp-action="ProgramsLibrary" class="btn btn-primary">Back to Library</a>
+        </div>
+        return;
+    }
+
+    ViewData["Title"] = Model.Title;
+    ViewData["Subtitle"] = "Training Program Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@Model?.Title</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <div>
+        <a asp-action="EditProgram" asp-route-id="@Model?.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit Program
+        </a>
+        <a asp-action="ProgramsLibrary" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Library
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Program Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Description</label>
+                        <p>@Model?.Description</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Provider</label>
+                        <p>@Model?.Provider</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Category</label>
+                        <p><span class="badge bg-secondary">@Model?.Category</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Duration</label>
+                        <p><i class="bi bi-clock me-1"></i>@Model?.Duration hours</p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Format</label>
+                        <p>@Model?.Format</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Difficulty Level</label>
+                        <p>
+                            @if (Model?.DifficultyLevel == "Beginner")
+                            {
+                                <span class="badge bg-success">@Model.DifficultyLevel</span>
+                            }
+                            else if (Model?.DifficultyLevel == "Intermediate")
+                            {
+                                <span class="badge bg-warning">@Model.DifficultyLevel</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">@Model.DifficultyLevel</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Status</label>
+                        <p>
+                            @if (Model?.IsActive == true)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-pause-circle me-1"></i>Inactive
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model?.Prerequisites))
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Prerequisites</label>
+                        <p>@Model.Prerequisites</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Skills Covered -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-tools me-2"></i>Skills Covered
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model?.CoveredSkills?.Any() == true)
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var skill in Model.CoveredSkills)
+                        {
+                            <span class="badge bg-primary">@skill</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No skills specified for this program.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Statistics -->
+        @* <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Program Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 fw-bold text-primary">@Model?.AssignmentCount</div>
+                    <div class="text-muted">Total Assignments</div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Completed:</span>
+                    <span class="fw-semibold">@Model?.CompletedCount</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>In Progress:</span>
+                    <span class="fw-semibold">@(Model?.AssignmentCount - Model?.CompletedCount ?? 0)</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Completion Rate:</span>
+                    <span class="fw-semibold">
+                        @{
+                            var rate = Model?.AssignmentCount > 0 ? (Model.CompletedCount * 100) / Model.AssignmentCount : 0;
+                        }
+                        @rate%
+                    </span>
+                </div>
+
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @rate%;"></div>
+                </div>
+            </div>
+        </div> *@
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="AssignTraining" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Assign to Employees
+                    </a>
+                    <a asp-action="EditProgram" asp-route-id="@Model?.Id" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil me-1"></i>Edit Program
+                    </a>
+                    @* <button type="button" class="btn btn-outline-danger delete-program"
+                            data-program-id="@Model?.Id" data-program-title="@Model?.Title">
+                        <i class="bi bi-trash me-1"></i>Delete Program
+                    </button> *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

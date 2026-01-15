@@ -1,0 +1,261 @@
+﻿@model List<WebApplication2.Models.Support_Model.EmployeeTrainingAnalysis>
+
+@{
+    ViewData["Title"] = "Training Analysis";
+    ViewData["Subtitle"] = "Analyze training needs and completion rates";
+
+    var totalEmployees = Model.Count;
+    var needsTraining = Model.Count(a => a.NeedsTraining);
+    var upToDate = totalEmployees - needsTraining;
+    var totalCompleted = Model.Sum(a => a.CompletedTrainings);
+    var avgCompletionRate = totalEmployees > 0 ? (double)totalCompleted / totalEmployees : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i>Back to Overview
+        </a>
+        <a asp-action="ExportAnalysisReport" class="btn btn-outline-primary">
+            <i class="bi bi-download me-1"></i>Export Report
+        </a>
+    </div>
+</div>
+
+<!-- Analysis Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">@totalEmployees</h4>
+                <small>Total Employees</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">@needsTraining</h4>
+                <small>Need Training</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">@upToDate</h4>
+                <small>Up to Date</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-1">@totalCompleted</h4>
+                <small>Completed Trainings</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Analysis Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-people me-2"></i>Employee Training Analysis
+        </h5>
+        <div class="input-group" style="width: 300px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Search employees..." id="searchEmployees">
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="analysisTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Skills Count</th>
+                        <th>Skill Gaps</th>
+                        <th>Trainings</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var analysis in Model)
+                    {
+                        var criticalGaps = analysis.SkillGaps?.Count(g => g.Gap >= 2) ?? 0;
+                        var totalGaps = analysis.SkillGaps?.Count(g => g.Gap > 0) ?? 0;
+
+                        <tr data-name="@analysis.Employee.FirstName.ToLower() @analysis.Employee.LastName.ToLower()"
+                            data-department="@analysis.Employee.Department?.ToLower()">
+                            <td>
+                                <div>
+                                    <strong>@analysis.Employee.FirstName @analysis.Employee.LastName</strong>
+                                    <br>
+                                    <small class="text-muted">@analysis.Employee.Email</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">@analysis.Employee.Department</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">@analysis.Skills.Count</span>
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="badge @(criticalGaps > 0 ? "bg-danger" : totalGaps > 0 ? "bg-warning" : "bg-success")">
+                                        @totalGaps gaps
+                                    </span>
+                                    @if (criticalGaps > 0)
+                                    {
+                                        <br>
+                                        <small class="text-danger">(@criticalGaps critical)</small>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="badge bg-primary">@analysis.Trainings.Count total</span>
+                                    <br>
+                                    <span class="badge bg-success">@analysis.CompletedTrainings completed</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (analysis.NeedsTraining)
+                                {
+                                    <span class="badge bg-warning">Needs Training</span>
+                                    <br>
+                                    <small class="text-muted">@totalGaps skill gaps</small>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Up to Date</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                  @*   <a asp-action="EmployeeRecommendations" asp-route-employeeId="@analysis.Employee.Id"
+                                       class="btn btn-outline-info" title="View Recommendations">
+                                        <i class="bi bi-lightbulb"></i>
+                                    </a> *@
+                                    <a asp-action="AssignTraining" asp-route-employeeId="@analysis.Employee.Id"
+                                       class="btn btn-outline-primary" title="Assign Training">
+                                        <i class="bi bi-person-plus"></i>
+                                    </a>
+                                   @*  <button class="btn btn-outline-success auto-assign-btn"
+                                            data-employee-id="@analysis.Employee.Id"
+                                            data-employee-name="@analysis.Employee.FirstName @analysis.Employee.LastName"
+                                            title="Auto Assign Training">
+                                        <i class="bi bi-robot"></i>
+                                    </button> *@
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-graph-up display-1"></i>
+                <h5 class="mt-3">No Analysis Data Available</h5>
+                <p class="mb-4">Employee skills data is required for training analysis</p>
+                <a asp-controller="Employee" asp-action="EmployeeSkills" class="btn btn-primary">
+                    <i class="bi bi-people me-1"></i>Manage Employee Skills
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Auto Assign Modal -->
+<div class="modal fade" id="autoAssignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-robot me-2"></i>Auto Assign Training
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Auto-assign training based on skill gaps for <strong id="modalEmployeeName"></strong>?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This will assign high-priority trainings to address critical skill gaps.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="autoAssignForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-robot me-1"></i>Auto Assign
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            const searchInput = document.getElementById('searchEmployees');
+            const analysisTable = document.getElementById('analysisTable');
+            const rows = analysisTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                Array.from(rows).forEach(row => {
+                    const name = row.getAttribute('data-name');
+                    const department = row.getAttribute('data-department');
+
+                    if (name.includes(searchTerm) || department.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Auto assign functionality
+            const autoAssignModal = new bootstrap.Modal(document.getElementById('autoAssignModal'));
+            const autoAssignForm = document.getElementById('autoAssignForm');
+            const modalEmployeeName = document.getElementById('modalEmployeeName');
+
+            document.querySelectorAll('.auto-assign-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const employeeId = this.getAttribute('data-employee-id');
+                    const employeeName = this.getAttribute('data-employee-name');
+
+                    modalEmployeeName.textContent = employeeName;
+                    autoAssignForm.action = '@Url.Action("AutoAssignTraining", "Training")' + '?employeeId=' + employeeId;
+                    autoAssignModal.show();
+                });
+            });
+
+            // Row highlighting
+            const tableRows = document.querySelectorAll('#analysisTable tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                row.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+        });
+    </script>
+}

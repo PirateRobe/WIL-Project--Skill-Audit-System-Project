@@ -1,0 +1,427 @@
+﻿@{
+    ViewData["Title"] = "Reports Dashboard";
+    ViewData["Subtitle"] = "Reporting and analytics overview";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
+                <i class="bi bi-plus-circle me-1"></i>Generate Report
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-list-ul me-1"></i>View All Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Employees</div>
+                            <div class="h5 mb-0">@ViewBag.TotalEmployees</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Training Assignments</div>
+                            <div class="h5 mb-0">@ViewBag.TotalAssignments</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-book fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @* <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Reports</div>
+                            <div class="h5 mb-0">@ViewBag.ReportStats.Total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-file-text fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+        @* <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">This Month</div>
+                            <div class="h5 mb-0">@ViewBag.ReportStats.ThisMonth</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-month fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+    </div>
+
+    <div class="row">
+        <!-- Recent Reports -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Recent Reports
+                    </h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.RecentReports != null && ViewBag.RecentReports.Count > 0)
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var report in ViewBag.RecentReports)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">@report.Title</h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar me-1"></i>@report.GeneratedAt.ToString("MMM dd, yyyy HH:mm")
+                                            <i class="bi bi-person me-1 ms-2"></i>@report.GeneratedBy
+                                        </small>
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Details", new { id = report.Id })" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (!string.IsNullOrEmpty(report.FileUrl))
+                                        {
+                                            <a href="@Url.Action("Download", new { id = report.Id })" class="btn btn-sm btn-outline-success">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-file-earmark-text display-4 text-muted"></i>
+                            <p class="text-muted mt-3">No reports generated yet</p>
+                            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>Generate First Report
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+          @*   <!-- Quick Report Types -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Popular Report Types
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card report-type-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-tools display-6 text-primary mb-3"></i>
+                                    <h5>Skills & Training</h5>
+                                    <p class="text-muted small">Comprehensive overview of employee skills and training progress</p>
+                                    <button class="btn btn-outline-primary btn-sm quick-report-btn" data-type="SkillsAndTraining">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card report-type-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up display-6 text-success mb-3"></i>
+                                    <h5>Skill Gap Analysis</h5>
+                                    <p class="text-muted small">Identify skill gaps and training needs across the organization</p>
+                                    <button class="btn btn-outline-success btn-sm quick-report-btn" data-type="SkillGapAnalysis">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card report-type-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-building display-6 text-info mb-3"></i>
+                                    <h5>Department Performance</h5>
+                                    <p class="text-muted small">Compare training performance and skill levels by department</p>
+                                    <button class="btn btn-outline-info btn-sm quick-report-btn" data-type="DepartmentPerformance">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card report-type-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-check-circle display-6 text-warning mb-3"></i>
+                                    <h5>Training Completion</h5>
+                                    <p class="text-muted small">Track training completion rates and identify bottlenecks</p>
+                                    <button class="btn btn-outline-warning btn-sm quick-report-btn" data-type="TrainingCompletion">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            @* <!-- Report Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Report Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>This Month</span>
+                            <span class="text-primary">@ViewBag.ReportStats.ThisMonth</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: @(ViewBag.ReportStats.Total > 0 ? (ViewBag.ReportStats.ThisMonth * 100 / ViewBag.ReportStats.Total) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Last Month</span>
+                            <span class="text-info">@ViewBag.ReportStats.LastMonth</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: @(ViewBag.ReportStats.Total > 0 ? (ViewBag.ReportStats.LastMonth * 100 / ViewBag.ReportStats.Total) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Total Reports</span>
+                            <span class="text-success">@ViewBag.ReportStats.Total</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+
+            @* <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Create")" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Create Custom Report
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                            <i class="bi bi-folder me-1"></i>Browse All Reports
+                        </a>
+                        <button class="btn btn-outline-info" id="generateAllReports">
+                            <i class="bi bi-gear-wide-connected me-1"></i>Generate Standard Reports
+                        </button>
+                    </div>
+                </div>
+            </div> *@
+
+            <!-- Tips & Best Practices -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>Reporting Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush small">
+                        <div class="list-group-item px-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Schedule reports</strong> for regular monitoring
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Use <strong>filters</strong> to focus on specific data
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Include <strong>recommendations</strong> for action items
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Compare <strong>period-over-period</strong> performance
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Export in <strong>multiple formats</strong> for different uses
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Quick report generation
+            document.querySelectorAll('.quick-report-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const reportType = this.getAttribute('data-type');
+                    generateQuickReport(reportType);
+                });
+            });
+
+            // Generate all standard reports
+            document.getElementById('generateAllReports').addEventListener('click', function() {
+                const btn = this;
+                const originalText = btn.innerHTML;
+
+                btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                btn.disabled = true;
+
+                // Generate multiple reports in sequence
+                const reportTypes = ['SkillsAndTraining', 'DepartmentPerformance', 'SkillGapAnalysis', 'TrainingCompletion'];
+                let completed = 0;
+
+                reportTypes.forEach(type => {
+                    fetch('@Url.Action("GenerateQuickReport")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(type)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        completed++;
+                        if (completed === reportTypes.length) {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            showNotification('All standard reports generated successfully!', 'success');
+                            setTimeout(() => {
+                                window.location.href = '@Url.Action("Index")';
+                            }, 2000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        showNotification('Error generating reports', 'error');
+                    });
+                });
+            });
+
+            function generateQuickReport(reportType) {
+                const btn = document.querySelector(`.quick-report-btn[data-type="${reportType}"]`);
+                const originalText = btn.innerHTML;
+
+                btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+                btn.disabled = true;
+
+                fetch('@Url.Action("GenerateQuickReport")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(reportType)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Report generated successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.href = '@Url.Action("Details")' + '?id=' + data.reportId;
+                        }, 1000);
+                    } else {
+                        showNotification('Error: ' + data.message, 'error');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error generating report', 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+            }
+
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+                notification.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+        });
+    </script>
+}
+
+<style>
+    .report-type-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+
+        .report-type-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+    .metric-card {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        text-align: center;
+    }
+</style>

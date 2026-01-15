@@ -1,0 +1,421 @@
+﻿@model List<WebApplication2.Models.Training>
+@using WebApplication2.Models
+@{
+    ViewData["Title"] = "Training Certificates";
+    Layout = "_Layout";
+
+    var certificates = Model ?? new List<Training>();
+    var employee = ViewBag.Employee as WebApplication2.Models.Employee;
+    
+    // Calculate certificate statistics
+    var pdfCertificates = certificates.Count(c => !string.IsNullOrEmpty(c.CertificatePdfUrl));
+    var imageCertificates = certificates.Count(c => !string.IsNullOrEmpty(c.CertificateUrl) && string.IsNullOrEmpty(c.CertificatePdfUrl));
+    var missingCertificates = certificates.Count(c => string.IsNullOrEmpty(c.CertificatePdfUrl) && string.IsNullOrEmpty(c.CertificateUrl));
+    var downloadableCertificates = certificates.Count(c => !string.IsNullOrEmpty(c.CertificatePdfUrl) || !string.IsNullOrEmpty(c.CertificateUrl));
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Training Certificates</h1>
+        <div>
+            @if (downloadableCertificates > 0)
+            {
+                <a href="@Url.Action("DownloadAllCertificates", new { employeeId = employee?.Id })" 
+                   class="btn btn-success me-2" id="downloadAllBtn">
+                    <i class="bi bi-download me-1"></i>Download All (@downloadableCertificates)
+                </a>
+            }
+            @if (employee != null)
+            {
+                <a href="@Url.Action("Details", "Employee", new { id = employee.Id })" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Employee
+                </a>
+            }
+            else
+            {
+                <a href="@Url.Action("Index", "Employee")" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Employees
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Loading Spinner for Download All -->
+    <div id="downloadLoading" class="alert alert-info d-none">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span>Preparing your download... This may take a moment.</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-award me-2"></i>
+                @if (employee != null)
+                {
+                    <text>Certificates for @employee.FullName</text>
+                }
+                else
+                {
+                    <text>Training Certificates</text>
+                }
+                <span class="badge bg-primary ms-2">@certificates.Count</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (certificates.Any())
+            {
+                <!-- Certificate Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center py-3">
+                                <h4 class="mb-0">@certificates.Count</h4>
+                                <small>Total Trainings</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center py-3">
+                                <h4 class="mb-0">@pdfCertificates</h4>
+                                <small>PDF Certificates</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center py-3">
+                                <h4 class="mb-0">@imageCertificates</h4>
+                                <small>Image Certificates</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center py-3">
+                                <h4 class="mb-0">@missingCertificates</h4>
+                                <small>Missing Certificates</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificate Filters -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">
+                                All Certificates (@certificates.Count)
+                            </button>
+                            <button type="button" class="btn btn-outline-success filter-btn" data-filter="pdf">
+                                PDF Files (@pdfCertificates)
+                            </button>
+                            <button type="button" class="btn btn-outline-info filter-btn" data-filter="image">
+                                Image Files (@imageCertificates)
+                            </button>
+                            <button type="button" class="btn btn-outline-warning filter-btn" data-filter="missing">
+                                Missing (@missingCertificates)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover" id="certificatesTable">
+                        <thead>
+                            <tr>
+                                <th>Training</th>
+                                <th>Provider</th>
+                                <th>Completion Date</th>
+                                <th>File Type</th>
+                                <th>File Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var training in certificates)
+                            {
+                                var hasPdf = !string.IsNullOrEmpty(training.CertificatePdfUrl);
+                                var hasImage = !string.IsNullOrEmpty(training.CertificateUrl) && string.IsNullOrEmpty(training.CertificatePdfUrl);
+                                var hasCertificate = hasPdf || hasImage;
+                                var fileType = hasPdf ? "PDF" : hasImage ? "Image" : "Missing";
+                                var rowClass = hasPdf ? "pdf-row" : hasImage ? "image-row" : "missing-row";
+                                
+                                <tr class="certificate-row @rowClass" data-file-type="@fileType.ToLower()">
+                                    <td>
+                                        <strong>@training.Title</strong>
+                                        @if (!string.IsNullOrEmpty(training.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@training.Description</small>
+                                        }
+                                    </td>
+                                    <td>@training.Provider</td>
+                                    <td>
+                                        @if (training.CompletedDate.HasValue && training.CompletedDate.Value > 0)
+                                        {
+                                            @DateTimeOffset.FromUnixTimeMilliseconds(training.CompletedDate.Value).DateTime.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (hasPdf)
+                                        {
+                                            <span class="badge bg-success">PDF</span>
+                                        }
+                                        else if (hasImage)
+                                        {
+                                            <span class="badge bg-info">Image</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Missing</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(training.CertificateFileName))
+                                        {
+                                            <code class="small">@training.CertificateFileName</code>
+                                        }
+                                        else if (hasCertificate)
+                                        {
+                                            <span class="text-muted small">No file name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">No certificate</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (hasCertificate && !string.IsNullOrEmpty(training.EmployeeId))
+                                            {
+                                                <!-- Direct Download Button -->
+                                                <a href="@(hasPdf ? training.CertificatePdfUrl : training.CertificateUrl)" 
+                                                   class="btn btn-outline-success" 
+                                                   title="Download Certificate"
+                                                   download
+                                                   onclick="trackDownload('@training.Id', 'direct')">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </a>
+                                                
+                                                @* <!-- Controller Download Button (Alternative) -->
+                                                <a href="@Url.Action("DownloadEmployeeDocument", new { 
+                                                    employeeId = training.EmployeeId, 
+                                                    documentType = "training-certificate", 
+                                                    documentId = training.Id 
+                                                })" 
+                                                   class="btn btn-outline-secondary" 
+                                                   title="Download via Server"
+                                                   onclick="trackDownload('@training.Id', 'server')">
+                                                    <i class="bi bi-cloud-download me-1"></i>
+                                                </a>
+                                                
+                                                <!-- View Button -->
+                                                <a href="@Url.Action("ViewTrainingCertificate", new { 
+                                                    employeeId = training.EmployeeId, 
+                                                    trainingId = training.Id 
+                                                })" 
+                                                   class="btn btn-outline-primary" 
+                                                   title="View Certificate" 
+                                                   target="_blank"
+                                                   onclick="trackView('@training.Id')">
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </a> *@
+                                            }
+                                            else if (!string.IsNullOrEmpty(training.EmployeeId))
+                                            {
+                                                <button class="btn btn-outline-secondary" disabled title="No certificate available">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </button>
+                                                <span class="btn btn-outline-warning" title="Certificate missing">
+                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-secondary" disabled title="No Employee ID">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bulk Actions -->
+                @if (downloadableCertificates > 0)
+                {
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-0">Bulk Actions</h6>
+                                <small class="text-muted">Download all certificates at once</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="@Url.Action("DownloadAllCertificates", new { employeeId = employee?.Id })" 
+                                   class="btn btn-success" id="bulkDownloadBtn">
+                                    <i class="bi bi-download me-1"></i>Download All as ZIP
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">No training certificates found</p>
+                    <p class="text-muted small">Complete trainings and upload certificates to see them here.</p>
+                    @if (employee != null)
+                    {
+                        <a href="@Url.Action("Details", "Employee", new { id = employee.Id })" class="btn btn-primary mt-2">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Employee Details
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Filter certificates by type
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const certificateRows = document.querySelectorAll('.certificate-row');
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active button
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Filter rows
+                    certificateRows.forEach(row => {
+                        if (filter === 'all' || row.getAttribute('data-file-type') === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Download All button handler
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const bulkDownloadBtn = document.getElementById('bulkDownloadBtn');
+            const downloadLoading = document.getElementById('downloadLoading');
+
+            if (downloadAllBtn) {
+                downloadAllBtn.addEventListener('click', function(e) {
+                    downloadLoading.classList.remove('d-none');
+                    setTimeout(() => {
+                        downloadLoading.classList.add('d-none');
+                    }, 5000);
+                });
+            }
+
+            if (bulkDownloadBtn) {
+                bulkDownloadBtn.addEventListener('click', function(e) {
+                    downloadLoading.classList.remove('d-none');
+                    setTimeout(() => {
+                        downloadLoading.classList.add('d-none');
+                    }, 5000);
+                });
+            }
+        });
+
+        // Track download events
+        function trackDownload(trainingId, method) {
+            console.log(`Downloading certificate for training ${trainingId} via ${method}`);
+            // You can send this to analytics or your backend
+            fetch('/Training/TrackDownload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trainingId: trainingId,
+                    downloadMethod: method,
+                    timestamp: new Date().toISOString()
+                })
+            }).catch(error => console.error('Error tracking download:', error));
+        }
+
+        // Track view events
+        function trackView(trainingId) {
+            console.log(`Viewing certificate for training ${trainingId}`);
+            // You can send this to analytics or your backend
+            fetch('/Training/TrackView', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trainingId: trainingId,
+                    timestamp: new Date().toISOString()
+                })
+            }).catch(error => console.error('Error tracking view:', error));
+        }
+    </script>
+
+    <style>
+        .pdf-row { border-left: 4px solid #198754; }
+        .image-row { border-left: 4px solid #0dcaf0; }
+        .missing-row { border-left: 4px solid #ffc107; }
+        
+        .filter-btn.active {
+            font-weight: bold;
+        }
+        
+        .certificate-row {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        #downloadLoading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1050;
+            min-width: 300px;
+        }
+    </style>
+}

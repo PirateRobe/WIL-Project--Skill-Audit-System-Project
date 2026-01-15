@@ -1,0 +1,244 @@
+﻿@model WebApplication2.Models.ViewModel.EmployeeDocumentsViewModel
+@{
+    ViewData["Title"] = "Employee Documents - " + Model?.Employee?.FullName;
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Employee Documents</h1>
+        <div>
+            @if (Model?.FirestoreDocuments?.Any() == true || Model?.StorageFiles?.Any() == true)
+            {
+                <a href="@Url.Action("DownloadAllCertificates", new { employeeId = Model.Employee.Id })"
+                   class="btn btn-success me-2">
+                    <i class="bi bi-download me-1"></i>Download All
+                </a>
+            }
+            <a href="@Url.Action("Details", new { id = Model?.Employee?.Id })" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Employee
+            </a>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model?.Employee != null)
+    {
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>@(Model.FirestoreDocuments?.Count ?? 0)</h3>
+                        <p class="mb-0">Database Documents</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>@(Model.StorageFiles?.Count ?? 0)</h3>
+                        <p class="mb-0">Storage Files</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>@((Model.FirestoreDocuments?.Count ?? 0) + (Model.StorageFiles?.Count ?? 0))</h3>
+                        <p class="mb-0">Total Documents</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <a href="@Url.Action("DownloadAllCertificates", new { employeeId = Model.Employee.Id })"
+                           class="text-white text-decoration-none">
+                            <h3><i class="bi bi-download"></i></h3>
+                            <p class="mb-0">Download All</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Documents -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-database me-2"></i>Database Documents
+                    <span class="badge bg-primary ms-2">@(Model.FirestoreDocuments?.Count ?? 0)</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model.FirestoreDocuments?.Any() == true)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Title</th>
+                                    <th>File Name</th>
+                                    <th>Upload Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in Model.FirestoreDocuments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge @GetDocumentTypeBadge(doc.Type)">@doc.Type</span>
+                                        </td>
+                                        <td>
+                                            <strong>@doc.Title</strong>
+                                            @if (!string.IsNullOrEmpty(doc.Description))
+                                            {
+                                                <br />
+                                                <small class="text-muted">@doc.Description</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <code>@doc.FileName</code>
+                                        </td>
+                                        <td>@doc.UploadDate.ToString("MMM dd, yyyy")</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@doc.DownloadUrl" download class="btn btn-outline-success">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </a>
+                                                <a href="@doc.DownloadUrl" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-database text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No database documents found</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Storage Files -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-cloud me-2"></i>Storage Files
+                    <span class="badge bg-success ms-2">@(Model.StorageFiles?.Count ?? 0)</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model.StorageFiles?.Any() == true)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Size</th>
+                                    <th>Last Modified</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var file in Model.StorageFiles)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@file.Name</strong>
+                                        </td>
+                                        <td>@FormatFileSize(file.Size)</td>
+                                        <td>@file.Updated.ToString("MMM dd, yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@file.ContentType</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@Url.Action("DownloadDocument", new { storagePath = file.Path, fileName = file.Name })"
+                                                   class="btn btn-outline-success">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </a>
+                                                <a href="@file.DownloadUrl" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-cloud text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No storage files found</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Employee not found or invalid employee data.
+        </div>
+    }
+</div>
+
+@functions {
+    public string GetDocumentTypeBadge(string type)
+    {
+        return type?.ToLower() switch
+        {
+            "training certificate" => "bg-success",
+            "qualification certificate" => "bg-primary",
+            "transcript" => "bg-info",
+            "training certificate image" => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double len = bytes;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

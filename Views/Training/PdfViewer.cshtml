@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "View Certificate";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Certificate Viewer</h1>
+        <a href="javascript:history.back()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            @if (ViewBag.PdfViewerUrl != null)
+            {
+                <div class="embed-responsive embed-responsive-16by9" style="height: 80vh;">
+                    <iframe src="@ViewBag.PdfViewerUrl"
+                            class="embed-responsive-item w-100 h-100"
+                            frameborder="0"
+                            allowfullscreen>
+                    </iframe>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Unable to load certificate viewer.
+                </div>
+            }
+        </div>
+    </div>
+</div>

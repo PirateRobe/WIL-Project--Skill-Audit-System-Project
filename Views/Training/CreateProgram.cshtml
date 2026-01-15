@@ -1,0 +1,708 @@
+﻿@model WebApplication2.Models.TrainingProgram
+
+@{
+    ViewData["Title"] = "Create Training Program";
+    ViewData["Subtitle"] = "Add new training program to library";
+
+    // Skill categories and skills
+    var skillCategories = new List<string>
+    {
+        "Financial & Budgeting",
+        "Data & Analytics",
+        "Risk Management",
+        "Project Management",
+        "Reporting & Documentation"
+    };
+
+    var skillsByCategory = new Dictionary<string, List<string>>
+    {
+        ["Financial & Budgeting"] = new List<string>
+        {
+            "Financial Modeling", "Budgeting & Forecasting", "Financial Analysis",
+            "Cost Management", "Revenue Analysis", "Investment Analysis"
+        },
+        ["Data & Analytics"] = new List<string>
+        {
+            "Data Analysis", "Analytics & Insights", "Statistical Analysis",
+            "Data Visualization", "Business Intelligence", "Quantitative Analysis"
+        },
+        ["Risk Management"] = new List<string>
+        {
+            "Risk Assessment", "Risk Analysis & Mitigation", "Compliance",
+            "Internal Controls", "Audit Procedures", "Governance"
+        },
+        ["Project Management"] = new List<string>
+        {
+            "Project Management", "Planning & Execution", "Stakeholder Management",
+            "Agile Methodology", "Resource Planning", "Strategic Planning"
+        },
+        ["Reporting & Documentation"] = new List<string>
+        {
+            "Report Writing", "Documentation & Reporting", "Technical Writing",
+            "Executive Summaries", "Presentation Skills", "Document Management"
+        }
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <a asp-action="ProgramsLibrary" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Library
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Create Training Program
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="CreateProgram" method="post" id="createProgramForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Display validation summary -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <h6>Please fix the following errors:</h6>
+                            <ul class="mb-0">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">
+                                <i class="bi bi-info-circle me-2"></i>Basic Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Training Title *</label>
+                                <input type="text" class="form-control @(ViewData.ModelState["Title"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                       asp-for="Title" placeholder="Enter training program title" required>
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Category</label>
+                                <select class="form-select @(ViewData.ModelState["Category"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                        asp-for="Category">
+                                    <option value="">Select Category</option>
+                                    <option value="Technical">Technical</option>
+                                    <option value="Soft Skills">Soft Skills</option>
+                                    <option value="Compliance">Compliance</option>
+                                    <option value="Leadership">Leadership</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Category" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Description *</label>
+                                <textarea class="form-control @(ViewData.ModelState["Description"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                          asp-for="Description" rows="3"
+                                          placeholder="Enter training description, objectives, and key learnings" required></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Provider *</label>
+                                <input type="text" class="form-control @(ViewData.ModelState["Provider"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                       asp-for="Provider" placeholder="Training provider or organization" required>
+                                <span asp-validation-for="Provider" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Duration (Hours)</label>
+                                <input type="number" class="form-control @(ViewData.ModelState["Duration"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                       asp-for="Duration" placeholder="Estimated duration in hours" min="1" value="40">
+                                <span asp-validation-for="Duration" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Covered -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="border-bottom pb-2 mb-0">
+                                    <i class="bi bi-tools me-2"></i>Skills Covered
+                                </h6>
+                                <small class="text-muted" id="selectedSkillsCount">0 skills selected</small>
+                            </div>
+
+                            <!-- Category Tabs -->
+                            <ul class="nav nav-tabs mb-3" id="skillTabs" role="tablist">
+                                @foreach (var category in skillCategories)
+                                {
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(category == "Financial & Budgeting" ? "active" : "")"
+                                                id="tab-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                                data-bs-toggle="tab"
+                                                data-bs-target="#pane-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                                type="button" role="tab">
+                                            @category
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <!-- Skills by Category -->
+                            <div class="tab-content" id="skillTabsContent">
+                                @foreach (var category in skillCategories)
+                                {
+                                    <div class="tab-pane fade @(category == "Financial & Budgeting" ? "show active" : "")"
+                                         id="pane-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                         role="tabpanel">
+                                        <div class="row">
+                                            @foreach (var skill in skillsByCategory[category])
+                                            {
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input skill-checkbox"
+                                                               type="checkbox"
+                                                               value="@skill"
+                                                               data-category="@category"
+                                                               id="skill-@skill.Replace(" ", "-").ToLower()"
+                                                               @(Model.CoveredSkills?.Contains(skill) == true ? "checked" : "")>
+                                                        <label class="form-check-label w-100 skill-label"
+                                                               for="skill-@skill.Replace(" ", "-").ToLower()">
+                                                            @skill
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Selected Skills Display -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="small text-muted mb-2">Selected Skills:</h6>
+                                <div id="selectedSkillsContainer">
+                                    @if (Model.CoveredSkills?.Count > 0)
+                                    {
+                                        foreach (var skill in Model.CoveredSkills)
+                                        {
+                                            <span class="badge bg-primary me-2 mb-2 selected-skill" data-skill="@skill">
+                                                @skill
+                                                <input type="hidden" name="CoveredSkills" value="@skill" />
+                                                <button type="button" class="btn-close btn-close-white ms-1 remove-skill"
+                                                        style="font-size: 0.7rem;"></button>
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No skills selected. Choose skills from the categories above.</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">
+                                <i class="bi bi-gear me-2"></i>Additional Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Difficulty Level</label>
+                                <select class="form-select @(ViewData.ModelState["DifficultyLevel"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                        asp-for="DifficultyLevel">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate" selected>Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                </select>
+                                <span asp-validation-for="DifficultyLevel" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Training Format</label>
+                                <select class="form-select @(ViewData.ModelState["Format"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                        asp-for="Format">
+                                    <option value="Online" selected>Online</option>
+                                    <option value="In-Person">In-Person</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Self-Paced">Self-Paced</option>
+                                </select>
+                                <span asp-validation-for="Format" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Prerequisites</label>
+                                <textarea class="form-control @(ViewData.ModelState["Prerequisites"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                          asp-for="Prerequisites" rows="2"
+                                          placeholder="Any prerequisites, required knowledge, or experience for this training"></textarea>
+                                <span asp-validation-for="Prerequisites" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
+                                <label class="form-check-label fw-semibold" asp-for="IsActive">
+                                    Active Program
+                                </label>
+                                <div class="form-text">Active programs can be assigned to employees. Inactive programs won't appear in assignment lists.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Create Program
+                        </button>
+                        <a asp-action="ProgramsLibrary" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="button" class="btn btn-outline-info" id="clearForm">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Clear Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>About Training Programs
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Training programs are reusable templates that can be assigned to multiple employees.
+                    They help standardize training content and track skill development across your organization.
+                </p>
+
+                <div class="mb-3">
+                    <h6 class="small fw-bold">Best Practices:</h6>
+                    <ul class="small text-muted">
+                        <li>Provide clear, descriptive titles</li>
+                        <li>Include detailed descriptions and objectives</li>
+                        <li>Select relevant skills for accurate tracking</li>
+                        <li>Set appropriate difficulty levels</li>
+                        <li>Specify accurate duration estimates</li>
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Created Date</label>
+                    <div class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        @DateTime.Now.ToString("MMM dd, yyyy")
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Flutter Compatible</label>
+                    <div>
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Yes
+                        </span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold">Auto-generated ID</label>
+                    <div class="text-muted small font-monospace">
+                        Will be created upon save
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="ProgramsLibrary" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-collection-play me-1"></i>View All Programs
+                    </a>
+                    <a asp-action="AssignTraining" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Assign Training
+                    </a>
+                    <a asp-action="CreateTraining" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Create Training Record
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const skillCheckboxes = document.querySelectorAll('.skill-checkbox');
+            const selectedSkillsContainer = document.getElementById('selectedSkillsContainer');
+            const selectedSkillsCount = document.getElementById('selectedSkillsCount');
+            const clearFormButton = document.getElementById('clearForm');
+            const createProgramForm = document.getElementById('createProgramForm');
+
+            // Update selected skills display
+            function updateSelectedSkills() {
+                const selectedSkills = Array.from(skillCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                // Update count
+                selectedSkillsCount.textContent = `${selectedSkills.length} skills selected`;
+
+                // Update display
+                if (selectedSkills.length > 0) {
+                    selectedSkillsContainer.innerHTML = selectedSkills.map(skill => `
+                        <span class="badge bg-primary me-2 mb-2 selected-skill" data-skill="${skill}">
+                            ${skill}
+                            <input type="hidden" name="CoveredSkills" value="${skill}" />
+                            <button type="button" class="btn-close btn-close-white ms-1 remove-skill"
+                                    style="font-size: 0.7rem;"></button>
+                        </span>
+                    `).join('');
+                } else {
+                    selectedSkillsContainer.innerHTML = '<span class="text-muted small">No skills selected. Choose skills from the categories above.</span>';
+                }
+
+                // Add remove event listeners
+                document.querySelectorAll('.remove-skill').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const skill = this.closest('.selected-skill').getAttribute('data-skill');
+                        const checkbox = document.querySelector(`.skill-checkbox[value="${skill}"]`);
+                        if (checkbox) {
+                            checkbox.checked = false;
+                        }
+                        updateSelectedSkills();
+                    });
+                });
+            }
+
+            // Skill checkbox change handler
+            skillCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedSkills);
+            });
+
+            // Clear form button
+            clearFormButton.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all form fields?')) {
+                    createProgramForm.reset();
+                    skillCheckboxes.forEach(cb => cb.checked = false);
+                    updateSelectedSkills();
+                    showToast('Form Cleared', 'All form fields have been reset', 'info');
+                }
+            });
+
+            // Form validation
+            createProgramForm.addEventListener('submit', function(e) {
+                // Use proper selectors to get form values
+                const title = document.querySelector('input[name="Title"]').value;
+                const description = document.querySelector('textarea[name="Description"]').value;
+                const provider = document.querySelector('input[name="Provider"]').value;
+                const duration = document.querySelector('input[name="Duration"]').value;
+                const selectedSkills = Array.from(skillCheckboxes).filter(cb => cb.checked);
+
+                // Clear previous custom validations
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+                let hasErrors = false;
+
+                // Basic validation
+                if (!title || title.trim() === '') {
+                    markFieldAsInvalid('Title', 'Title is required');
+                    hasErrors = true;
+                }
+
+                if (!description || description.trim() === '') {
+                    markFieldAsInvalid('Description', 'Description is required');
+                    hasErrors = true;
+                }
+
+                if (!provider || provider.trim() === '') {
+                    markFieldAsInvalid('Provider', 'Provider is required');
+                    hasErrors = true;
+                }
+
+                // Duration validation
+                if (!duration || parseInt(duration) <= 0) {
+                    markFieldAsInvalid('Duration', 'Please enter a valid duration (minimum 1 hour)');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) {
+                    e.preventDefault();
+                    showToast('Validation Error', 'Please fix the errors in the form', 'error');
+                    return;
+                }
+
+                // Skills confirmation (only if no skills selected)
+                if (selectedSkills.length === 0) {
+                    if (!confirm('No skills have been selected. Are you sure you want to create a training program without any skills?')) {
+                        e.preventDefault();
+                        const skillsTab = document.getElementById('tab-financial-budgeting');
+                        if (skillsTab) {
+                            new bootstrap.Tab(skillsTab).show();
+                        }
+                        return;
+                    }
+                }
+
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Creating...';
+                submitButton.disabled = true;
+
+                // Re-enable after 5 seconds in case of error
+                setTimeout(() => {
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                }, 5000);
+            });
+
+            function markFieldAsInvalid(fieldName, message) {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = message;
+                    field.parentNode.appendChild(feedback);
+                }
+            }
+
+            // Add hover effects to skill labels
+            document.querySelectorAll('.skill-label').forEach(label => {
+                label.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                    this.style.borderRadius = '4px';
+                    this.style.cursor = 'pointer';
+                });
+                label.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+
+            // Initialize selected skills display
+            updateSelectedSkills();
+
+            // Set default values for better UX
+            function setDefaultValues() {
+                const durationInput = document.querySelector('input[name="Duration"]');
+                if (!durationInput.value || durationInput.value === '0') {
+                    durationInput.value = '40';
+                }
+
+                const difficultySelect = document.querySelector('select[name="DifficultyLevel"]');
+                if (!difficultySelect.value) {
+                    difficultySelect.value = 'Intermediate';
+                }
+
+                const formatSelect = document.querySelector('select[name="Format"]');
+                if (!formatSelect.value) {
+                    formatSelect.value = 'Online';
+                }
+            }
+
+            setDefaultValues();
+        });
+
+        // Toast notification function
+        function showToast(title, message, type) {
+            // Create toast container if it doesn't exist
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+
+            const toastId = 'toast-' + Date.now();
+            const bgColor = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : type === 'info' ? 'bg-info' : 'bg-primary';
+
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgColor} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${title}:</strong> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', toastHtml);
+
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+            toast.show();
+
+            // Remove toast from DOM after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        // Show any existing TempData messages
+        @if (TempData["SuccessMessage"] != null)
+        {
+                <text>
+                showToast('Success', '@Html.Raw(TempData["SuccessMessage"])', 'success');
+                </text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+                <text>
+                showToast('Error', '@Html.Raw(TempData["ErrorMessage"])', 'error');
+                </text>
+        }
+    </script>
+
+    <!-- Your existing CSS styles here -->
+}
+
+    <style>
+        .skill-label {
+            padding: 8px 12px;
+            margin: -8px -12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .selected-skill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+        }
+
+        .remove-skill {
+            cursor: pointer;
+            opacity: 0.8;
+            margin-left: 4px;
+        }
+
+            .remove-skill:hover {
+                opacity: 1;
+            }
+
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+            padding: 8px 16px;
+        }
+
+            .nav-tabs .nav-link.active {
+                color: #0d6efd;
+                font-weight: 600;
+                border-bottom: 2px solid #0d6efd;
+            }
+
+        .tab-content {
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 16px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .font-monospace {
+            font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+        }
+
+        .border-bottom {
+            border-color: #e9ecef !important;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Custom scrollbar for tab content */
+        .tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tab-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+            .tab-content::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+    </style>
+}

@@ -1,0 +1,685 @@
+﻿@model WebApplication2.Models.TrainingProgram
+
+@{
+    ViewData["Title"] = "Edit Training Program";
+    ViewData["Subtitle"] = $"Edit {Model?.Title}";
+
+    // Skill categories and skills
+    var skillCategories = new List<string>
+    {
+        "Financial & Budgeting",
+        "Data & Analytics",
+        "Risk Management",
+        "Project Management",
+        "Reporting & Documentation"
+    };
+
+    var skillsByCategory = new Dictionary<string, List<string>>
+    {
+        ["Financial & Budgeting"] = new List<string>
+        {
+            "Financial Modeling", "Budgeting & Forecasting", "Financial Analysis",
+            "Cost Management", "Revenue Analysis", "Investment Analysis"
+        },
+        ["Data & Analytics"] = new List<string>
+        {
+            "Data Analysis", "Analytics & Insights", "Statistical Analysis",
+            "Data Visualization", "Business Intelligence", "Quantitative Analysis"
+        },
+        ["Risk Management"] = new List<string>
+        {
+            "Risk Assessment", "Risk Analysis & Mitigation", "Compliance",
+            "Internal Controls", "Audit Procedures", "Governance"
+        },
+        ["Project Management"] = new List<string>
+        {
+            "Project Management", "Planning & Execution", "Stakeholder Management",
+            "Agile Methodology", "Resource Planning", "Strategic Planning"
+        },
+        ["Reporting & Documentation"] = new List<string>
+        {
+            "Report Writing", "Documentation & Reporting", "Technical Writing",
+            "Executive Summaries", "Presentation Skills", "Document Management"
+        }
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <a asp-action="ProgramsLibrary" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Library
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Training Program
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="EditProgram" method="post" id="trainingForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">
+                                <i class="bi bi-info-circle me-2"></i>Basic Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Training Title *</label>
+                                <input type="text" class="form-control" asp-for="Title"
+                                       placeholder="Enter training program title" required>
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Category</label>
+                                <select class="form-select" asp-for="Category">
+                                    <option value="">Select Category</option>
+                                    <option value="Technical">Technical</option>
+                                    <option value="Soft Skills">Soft Skills</option>
+                                    <option value="Compliance">Compliance</option>
+                                    <option value="Leadership">Leadership</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Category" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Description *</label>
+                                <textarea class="form-control" asp-for="Description" rows="3"
+                                          placeholder="Enter training description" required>@Model.Description</textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Provider *</label>
+                                <input type="text" class="form-control" asp-for="Provider"
+                                       placeholder="Training provider or organization" required>
+                                <span asp-validation-for="Provider" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Duration (Hours)</label>
+                                <input type="number" class="form-control" asp-for="Duration"
+                                       placeholder="Estimated duration in hours" min="1">
+                                <span asp-validation-for="Duration" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Covered -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="border-bottom pb-2 mb-0">
+                                    <i class="bi bi-tools me-2"></i>Skills Covered
+                                </h6>
+                                <small class="text-muted" id="selectedSkillsCount">
+                                    @(Model?.CoveredSkills?.Count ?? 0) skills selected
+                                </small>
+                            </div>
+
+                            <!-- Category Tabs -->
+                            <ul class="nav nav-tabs mb-3" id="skillTabs" role="tablist">
+                                @foreach (var category in skillCategories)
+                                {
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(category == "Financial & Budgeting" ? "active" : "")"
+                                                id="tab-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                                data-bs-toggle="tab"
+                                                data-bs-target="#pane-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                                type="button" role="tab">
+                                            @category
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <!-- Skills by Category -->
+                            <div class="tab-content" id="skillTabsContent">
+                                @foreach (var category in skillCategories)
+                                {
+                                    <div class="tab-pane fade @(category == "Financial & Budgeting" ? "show active" : "")"
+                                         id="pane-@category.Replace(" & ", "-").Replace(" ", "-").ToLower()"
+                                         role="tabpanel">
+                                        <div class="row">
+                                            @foreach (var skill in skillsByCategory[category])
+                                            {
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input skill-checkbox"
+                                                               type="checkbox"
+                                                               value="@skill"
+                                                               data-category="@category"
+                                                               id="skill-@skill.Replace(" ", "-").ToLower()"
+                                                               @(Model?.CoveredSkills?.Contains(skill) == true ? "checked" : "")>
+                                                        <label class="form-check-label w-100 skill-label"
+                                                               for="skill-@skill.Replace(" ", "-").ToLower()">
+                                                            @skill
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Selected Skills Display -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="small text-muted mb-2">Selected Skills:</h6>
+                                <div id="selectedSkillsContainer">
+                                    @if (Model?.CoveredSkills != null && Model.CoveredSkills.Any())
+                                    {
+                                        foreach (var skill in Model.CoveredSkills)
+                                        {
+                                            <span class="badge bg-primary me-2 mb-2 selected-skill" data-skill="@skill">
+                                                @skill
+                                                <input type="hidden" name="CoveredSkills" value="@skill" />
+                                                <button type="button" class="btn-close btn-close-white ms-1 remove-skill"
+                                                        style="font-size: 0.7rem;"></button>
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No skills selected. Choose skills from the categories above.</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">
+                                <i class="bi bi-gear me-2"></i>Additional Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Difficulty Level</label>
+                                <select class="form-select" asp-for="DifficultyLevel">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate">Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                </select>
+                                <span asp-validation-for="DifficultyLevel" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Training Format</label>
+                                <select class="form-select" asp-for="Format">
+                                    <option value="Online">Online</option>
+                                    <option value="In-Person">In-Person</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Self-Paced">Self-Paced</option>
+                                </select>
+                                <span asp-validation-for="Format" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Prerequisites</label>
+                                <textarea class="form-control" asp-for="Prerequisites" rows="2"
+                                          placeholder="Any prerequisites for this training">@Model.Prerequisites</textarea>
+                                <span asp-validation-for="Prerequisites" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                                <label class="form-check-label fw-semibold" asp-for="IsActive">
+                                    Active Program
+                                </label>
+                                <div class="form-text">Inactive programs won't be available for new assignments.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Program Statistics -->
+                    @if (Model.AssignmentCount > 0)
+                    {
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2">
+                                    <i class="bi bi-graph-up me-2"></i>Program Statistics
+                                </h6>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-primary">@Model.AssignmentCount</h4>
+                                        <small class="text-muted">Total Assignments</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-success">@Model.CompletedCount</h4>
+                                        <small class="text-muted">Completed</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-warning">@(Model.AssignmentCount - Model.CompletedCount)</h4>
+                                        <small class="text-muted">In Progress</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-info">@(Model.AssignmentCount > 0 ? (Model.CompletedCount * 100 / Model.AssignmentCount) : 0)%</h4>
+                                        <small class="text-muted">Completion Rate</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (Model.AssignmentCount > 0)
+                            {
+                                <div class="col-12 mt-3">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>Note:</strong> This program has @Model.AssignmentCount active assignment(s).
+                                        Changes will affect all assigned employees.
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>Update Program
+                        </button>
+                        <a asp-action="ProgramDetails" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                            <i class="bi bi-eye me-1"></i>View Details
+                        </a>
+                        <a asp-action="ProgramsLibrary" class="btn btn-outline-secondary">Cancel</a>
+
+                        @if (Model.AssignmentCount == 0)
+                        {
+                            <button type="button" class="btn btn-outline-danger ms-auto" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-1"></i>Delete Program
+                            </button>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Program Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-activity me-2"></i>Program Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status</label>
+                    <div>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-pause-circle me-1"></i>Inactive
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Created</label>
+                    <div class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        @Model.CreatedAt.ToDateTime().ToString("MMM dd, yyyy")
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Last Updated</label>
+                    <div class="text-muted">
+                        <i class="bi bi-clock me-1"></i>
+                        Just now
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold">Program ID</label>
+                    <div class="text-muted small font-monospace">
+                        @Model.Id
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="AssignTraining" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Assign to Employees
+                    </a>
+                    <a asp-action="ProgramDetails" asp-route-id="@Model.Id" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-eye me-1"></i>View Details
+                    </a>
+                    <a href="@Url.Action("ProgramsLibrary", "Training")" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Back to Library
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Overview -->
+        @if (Model.AssignmentCount > 0)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>Assignment Overview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted">Completion Progress</span>
+                            <span class="small text-muted">@Model.CompletedCount/@Model.AssignmentCount</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            @{
+                                var completionRate = Model.AssignmentCount > 0 ? (Model.CompletedCount * 100) / Model.AssignmentCount : 0;
+                            }
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: @completionRate%;"
+                                 aria-valuenow="@completionRate"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <a asp-action="Index" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-list-check me-1"></i>View All Assignments
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>No Assignments
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">This program hasn't been assigned to any employees yet.</p>
+                    <div class="text-center">
+                        <a asp-action="AssignTraining" class="btn btn-primary btn-sm">
+                            <i class="bi bi-person-plus me-1"></i>Assign Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (Model.AssignmentCount == 0)
+{
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Training Program</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the program "<strong>@Model.Title</strong>"?</p>
+                    <p class="text-danger small mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        This action cannot be undone. The program will be permanently removed from the library.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="DeleteProgram" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-danger">Delete Program</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const skillCheckboxes = document.querySelectorAll('.skill-checkbox');
+            const selectedSkillsContainer = document.getElementById('selectedSkillsContainer');
+            const selectedSkillsCount = document.getElementById('selectedSkillsCount');
+
+            // Update selected skills display
+            function updateSelectedSkills() {
+                const selectedSkills = Array.from(skillCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                // Update count
+                selectedSkillsCount.textContent = `${selectedSkills.length} skills selected`;
+
+                // Update display
+                if (selectedSkills.length > 0) {
+                    selectedSkillsContainer.innerHTML = selectedSkills.map(skill => `
+                        <span class="badge bg-primary me-2 mb-2 selected-skill" data-skill="${skill}">
+                            ${skill}
+                            <input type="hidden" name="CoveredSkills" value="${skill}" />
+                            <button type="button" class="btn-close btn-close-white ms-1 remove-skill"
+                                    style="font-size: 0.7rem;"></button>
+                        </span>
+                    `).join('');
+                } else {
+                    selectedSkillsContainer.innerHTML = '<span class="text-muted small">No skills selected. Choose skills from the categories above.</span>';
+                }
+
+                // Add remove event listeners
+                document.querySelectorAll('.remove-skill').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const skill = this.closest('.selected-skill').getAttribute('data-skill');
+                        const checkbox = document.querySelector(`.skill-checkbox[value="${skill}"]`);
+                        if (checkbox) {
+                            checkbox.checked = false;
+                        }
+                        updateSelectedSkills();
+                    });
+                });
+            }
+
+            // Skill checkbox change handler
+            skillCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedSkills);
+            });
+
+            // Initialize selected skills display
+            updateSelectedSkills();
+
+            // Form validation
+            const trainingForm = document.getElementById('trainingForm');
+            trainingForm.addEventListener('submit', function(e) {
+                const selectedSkills = Array.from(skillCheckboxes).filter(cb => cb.checked);
+                if (selectedSkills.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one skill that this training covers.');
+                    // Activate skills tab
+                    const skillsTab = document.getElementById('tab-financial-budgeting');
+                    if (skillsTab) {
+                        new bootstrap.Tab(skillsTab).show();
+                    }
+                }
+            });
+
+            // Add hover effects to skill labels
+            document.querySelectorAll('.skill-label').forEach(label => {
+                label.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                    this.style.borderRadius = '4px';
+                });
+                label.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+
+            // Auto-select current values in dropdowns
+            function setSelectedOption(selectId, value) {
+                const select = document.getElementById(selectId);
+                if (select && value) {
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === value) {
+                            select.options[i].selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Set current values for dropdowns
+            setSelectedOption('Category', '@Model.Category');
+            setSelectedOption('DifficultyLevel', '@Model.DifficultyLevel');
+            setSelectedOption('Format', '@Model.Format');
+
+            // Show success message if there's one in TempData
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>
+                    showToast('Success', '@TempData["SuccessMessage"]', 'success');
+                    </text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>
+                    showToast('Error', '@TempData["ErrorMessage"]', 'error');
+                    </text>
+            }
+        });
+
+        // Toast notification function
+        function showToast(title, message, type) {
+            // You can implement a toast notification here
+            // For now, we'll use a simple alert
+            alert(`${title}: ${message}`);
+        }
+    </script>
+
+    <style>
+        .skill-label {
+            padding: 8px 12px;
+            margin: -8px -12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .selected-skill {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .remove-skill {
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+            .remove-skill:hover {
+                opacity: 1;
+            }
+
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+            .nav-tabs .nav-link.active {
+                color: #0d6efd;
+                font-weight: 600;
+            }
+
+        .tab-content {
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .progress {
+            background-color: #e9ecef;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .font-monospace {
+            font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+        }
+    </style>
+}

@@ -1,0 +1,183 @@
+﻿@model WebApplication2.Models.Support_Model.TrainingAssignment
+
+@{
+    ViewData["Title"] = "Edit Training Assignment";
+    ViewData["Subtitle"] = Model?.TrainingProgram?.Title ?? "Unknown Program";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+    </div>
+    <a asp-action="Details" asp-route-id="@Model?.Id" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Details
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pencil me-2"></i>Edit Assignment Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Status</label>
+                                <select class="form-select" asp-for="Status">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="InProgress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Progress</label>
+                                <input type="number" class="form-control" asp-for="Progress" min="0" max="100" />
+                                <span asp-validation-for="Progress" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Due Date</label>
+                                <input type="date" class="form-control" asp-for="DueDate" />
+                                <span asp-validation-for="DueDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-semibold">Assigned Reason</label>
+                                <input type="text" class="form-control" asp-for="AssignedReason" />
+                                <span asp-validation-for="AssignedReason" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.Status == "Completed")
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-semibold">Completed Date</label>
+                                    <input type="date" class="form-control" asp-for="CompletedDate" />
+                                    <span asp-validation-for="CompletedDate" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-semibold">Certificate File Name</label>
+                                    <input type="text" class="form-control" asp-for="CertificateFileName" />
+                                    <span asp-validation-for="CertificateFileName" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label fw-semibold">Certificate URL</label>
+                            <input type="text" class="form-control" asp-for="CertificateUrl" />
+                            <span asp-validation-for="CertificateUrl" class="text-danger small"></span>
+                        </div>
+                    }
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>Update Assignment
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Assignment Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Assignment Info
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Training Program</small>
+                    <div class="fw-semibold">@Model.TrainingProgram?.Title</div>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted">Employee</small>
+                    <div class="fw-semibold">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted">Assigned Date</small>
+                    <div class="fw-semibold">@Model.AssignedDate.ToString("MMM dd, yyyy")</div>
+                </div>
+
+                @if (Model.AcceptedDate.HasValue)
+                {
+                    <div class="mb-3">
+                        <small class="text-muted">Accepted Date</small>
+                        <div class="fw-semibold">@Model.AcceptedDate.Value.ToString("MMM dd, yyyy")</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i>View Details
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-list me-1"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum due date to today
+            const dueDateInput = document.getElementById('DueDate');
+            const today = new Date().toISOString().split('T')[0];
+            dueDateInput.min = today;
+
+            // Auto-fill completed date if marking as completed
+            const statusSelect = document.getElementById('Status');
+            statusSelect.addEventListener('change', function() {
+                if (this.value === 'Completed' && !document.getElementById('CompletedDate').value) {
+                    document.getElementById('CompletedDate').value = today;
+                }
+            });
+        });
+    </script>
+}

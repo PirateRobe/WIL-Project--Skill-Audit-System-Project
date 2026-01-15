@@ -1,0 +1,112 @@
+﻿@model WebApplication2.Models.Qualification
+@{
+    ViewData["Title"] = "Add Qualification";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Add Qualification</h1>
+            <p class="text-muted mb-0">for @ViewBag.Employee.FirstName @ViewBag.Employee.LastName</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.EmployeeId })" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Employee
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Qualification Information</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddQualification" method="post">
+                        <input type="hidden" asp-for="EmployeeId" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Degree" class="form-label">Degree *</label>
+                                    <input asp-for="Degree" class="form-control" required />
+                                    <span asp-validation-for="Degree" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Institution" class="form-label">Institution *</label>
+                                    <input asp-for="Institution" class="form-control" required />
+                                    <span asp-validation-for="Institution" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FieldOfStudy" class="form-label">Field of Study</label>
+                                    <input asp-for="FieldOfStudy" class="form-control" />
+                                    <span asp-validation-for="FieldOfStudy" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="YearCompleted" class="form-label">Year Completed *</label>
+                                    <input asp-for="YearCompleted" class="form-control"
+                                           min="1900" max="@DateTime.Now.Year" required />
+                                    <span asp-validation-for="YearCompleted" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Grade" class="form-label">Grade</label>
+                                    <input asp-for="Grade" class="form-control" />
+                                    <span asp-validation-for="Grade" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Details", new { id = Model.EmployeeId })" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Add Qualification
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Tips</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle me-2"></i>Information</h6>
+                        <small>
+                            <ul class="mb-0 ps-3">
+                                <li>Fill in all required fields marked with *</li>
+                                <li>You can upload certificates and transcripts after saving</li>
+                                <li>Year completed should be between 1900 and current year</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

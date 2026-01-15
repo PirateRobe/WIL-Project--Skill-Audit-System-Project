@@ -1,0 +1,56 @@
+﻿@using WebApplication2.Models
+@model List<Employee>
+@{
+    ViewData["Title"] = "Employee Dashboard";
+}
+
+<div class="container">
+    <h2>Employee Management Dashboard</h2>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>All Employees</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Position</th>
+                                    <th>Department</th>
+                                    <th>Hire Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var employee in Model)
+                                {
+                                    <tr>
+                                        <td>@employee.FirstName @employee.LastName</td>
+                                        <td>@employee.Email</td>
+                                        <td>@employee.Position</td>
+                                        <td>@employee.Department</td>
+                                        <td>@employee.HireDate.("yyyy-MM-dd")</td>
+                                        <td>
+                                            <a href="@Url.Action("Details", "Employee", new { id = employee.Id })"
+                                               class="btn btn-primary btn-sm">View Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>No employees found.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

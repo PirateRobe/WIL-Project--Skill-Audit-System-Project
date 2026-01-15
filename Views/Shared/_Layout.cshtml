@@ -1,0 +1,450 @@
+﻿@{
+    var isAdmin = Context.Session.GetString("IsAdmin") == "True";
+    var userEmail = Context.Session.GetString("UserEmail");
+    var userName = userEmail?.Split('@')[0] ?? "Admin";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Employee Management</title>
+
+    <!-- Styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <style>
+        /* Fullscreen login page */
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            padding: 1rem;
+        }
+
+            .sidebar .nav-link {
+                color: #495057;
+                padding: 0.5rem 0.75rem;
+                border-radius: 0.375rem;
+                margin-bottom: 0.25rem;
+            }
+
+                .sidebar .nav-link.active {
+                    background-color: #e7f1ff;
+                    color: #0d6efd !important;
+                    font-weight: 600;
+                }
+
+                .sidebar .nav-link:hover {
+                    background-color: #e9ecef;
+                }
+
+        /* Main content area */
+        .main-content {
+            padding: 2rem;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        /* Header styles */
+        .page-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Skill level colors for matrix */
+        .skill-level-1 {
+            background-color: #ffcccc;
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .skill-level-2 {
+            background-color: #ffe6cc;
+            color: #ef6c00;
+            font-weight: bold;
+        }
+
+        .skill-level-3 {
+            background-color: #ffffcc;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .skill-level-4 {
+            background-color: #e6ffcc;
+            color: #1565c0;
+            font-weight: bold;
+        }
+
+        .skill-level-5 {
+            background-color: #ccffcc;
+            color: #7b1fa2;
+            font-weight: bold;
+        }
+
+        .bg-purple {
+            background-color: #6f42c1 !important;
+        }
+
+        /* Card enhancements */
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+            margin-bottom: 1rem;
+        }
+
+        .metric-card {
+            transition: transform 0.2s;
+        }
+
+            .metric-card:hover {
+                transform: translateY(-2px);
+            }
+
+        /* Table enhancements */
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.025);
+        }
+
+        /* Navigation tabs */
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            border-bottom: 3px solid #0d6efd;
+        }
+
+        /* Responsive design */
+        @@media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+
+<body>
+    @if (isAdmin)
+    {
+        <!-- ADMIN LAYOUT -->
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Sidebar -->
+                <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                    <div class="position-sticky pt-3">
+                        <!-- Brand -->
+                        <div class="text-center mb-4">
+                            <h5 class="fw-bold text-primary">
+                                <i class="fas fa-shield-alt me-2"></i>National Treasury
+                            </h5>
+                            <small class="text-muted">Employee Management System</small>
+                        </div>
+
+                        <!-- Navigation -->
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"
+                                   asp-controller="Dashboard" asp-action="Index">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Employee" && ViewContext.RouteData.Values["Action"]?.ToString() == "Employee" ? "active" : "")"
+                                   asp-controller="Employee" asp-action="EmployeeSkills">
+                                    <i class="bi bi-people me-2"></i>Employee Skills
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "TrainingMvc" ? "active" : "")"
+                                   asp-controller="Training" asp-action="Index">
+                                    <i class="bi bi-mortarboard me-2"></i>Training Programs
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Report" ? "active" : "")"
+                                   asp-controller="Reports" asp-action="Dashboard">
+                                    <i class="bi bi-bar-chart me-2"></i>Reports
+                                </a>
+                            </li>
+                           @*  <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Profile" && ViewContext.RouteData.Values["Action"]?.ToString() == "Profile" ? "active" : "")"
+                                   asp-controller="Profile" asp-action="Index">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li> *@
+                        </ul>
+
+                        <hr class="my-4">
+
+                        <!-- User Profile Section -->
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                    <span class="text-white fw-bold small">@userName.Substring(0, 1).ToUpper()</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="fw-semibold text-dark">@userName</span>
+                                    <br>
+                                    <small class="text-muted">Administrator</small>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark shadow">
+                                <li class="dropdown-header">
+                                    <small class="text-muted">Signed in as</small><br>
+                                    <strong>@userEmail</strong>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Profile" asp-action="Index">
+                                        <i class="fas fa-user me-2"></i>My Profile
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="@Url.Action("Logout", "Account")" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Main Content -->
+                <main class="col-md-9 col-lg-10 main-content">
+                    <!-- Page Header -->
+                   @*  <div class="page-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h3 mb-1">@ViewData["Title"]</h1>
+                                @if (ViewData["Subtitle"] != null)
+                                {
+                                    <p class="text-muted mb-0">@ViewData["Subtitle"]</p>
+                                }
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">
+                                    <i class="fas fa-shield-alt me-1"></i>Admin
+                                </span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="@Url.Action("DebugData", "Dashboard")" target="_blank"><i class="bi bi-bug me-2"></i>Debug Data</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("TestAuth", "Account")"><i class="bi bi-wifi me-2"></i>Test Connection</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+ *@
+                    <!-- Alert Messages -->
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Main Content -->
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="border-top bg-white mt-5">
+            <div class="container-fluid py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="text-muted">
+                            &copy; @DateTime.Now.Year National Treasury - Employee Management System
+                        </span>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span class="text-muted">
+                            Logged in as: <strong>@userEmail</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    }
+    else
+    {
+        <!-- NON-ADMIN/GUEST LAYOUT -->
+        <!-- Simple navbar for non-admin users -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Dashboard")">
+                    <i class="fas fa-users me-2"></i>Employee Management
+                </a>
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <div class="navbar-nav ms-auto">
+                        <span class="navbar-text text-light me-3">
+                            Welcome, @User.Identity.Name!
+                        </span>
+                        <form method="post" action="@Url.Action("Logout", "Account")" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mt-4">
+            @RenderBody()
+        </div>
+
+        <!-- Footer -->
+        <footer class="border-top footer text-muted mt-5">
+            <div class="container py-3 text-center">
+                &copy; @DateTime.Now.Year - Employee Management System
+            </div>
+        </footer>
+    }
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Activate tabs based on URL hash
+            function activateTabFromHash() {
+                const hash = window.location.hash;
+                if (hash) {
+                    const tabElement = document.querySelector(`a[href="${hash}"]`);
+                    if (tabElement) {
+                        const tab = new bootstrap.Tab(tabElement);
+                        tab.show();
+                    }
+                }
+            }
+
+            // Activate tab on page load
+            activateTabFromHash();
+
+            // Update URL hash when tabs are shown
+            document.addEventListener('shown.bs.tab', function (event) {
+                const hash = event.target.getAttribute('href');
+                if (hash && hash.startsWith('#')) {
+                    window.history.replaceState(null, null, hash);
+                }
+            });
+
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Highlight active navigation link
+            const currentPath = window.location.pathname.toLowerCase();
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                const href = link.getAttribute('href')?.toLowerCase();
+                if (href && currentPath.includes(href)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Utility functions for skills management
+        window.skillsUtils = {
+            getSkillLevelClass: function(level) {
+                const levelMap = {
+                    'beginner': 'skill-level-1',
+                    'basic': 'skill-level-2',
+                    'intermediate': 'skill-level-3',
+                    'advanced': 'skill-level-4',
+                    'expert': 'skill-level-5',
+                    '1': 'skill-level-1',
+                    '2': 'skill-level-2',
+                    '3': 'skill-level-3',
+                    '4': 'skill-level-4',
+                    '5': 'skill-level-5'
+                };
+                return levelMap[level?.toLowerCase()] || '';
+            },
+
+            formatSkillLevel: function(level) {
+                const levelMap = {
+                    '1': 'Beginner',
+                    '2': 'Basic',
+                    '3': 'Intermediate',
+                    '4': 'Advanced',
+                    '5': 'Expert'
+                };
+                return levelMap[level] || level;
+            },
+
+            calculateGap: function(current, expected) {
+                return Math.max(0, expected - current);
+            }
+        };
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
